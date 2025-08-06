@@ -1,0 +1,382 @@
+/* Mobile First - Base styles ya están optimizados para móvil */
+
+/* Small mobile devices */
+@media (max-width: 375px) {
+  .date-selector {
+    margin: 0.5rem;
+    padding: 1rem;
+  }
+  
+  .results-section {
+    padding: 0.5rem;
+  }
+  
+  .card-content {
+    padding: 1rem;
+  }
+  
+  .results-actions {
+    flex-direction: column;
+  }
+  
+  .action-button {
+    margin-bottom: 0.5rem;
+  }
+  
+  .change-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .impact-badge {
+    margin-top: 0.5rem;
+  }
+}
+
+/* Tablet Portrait */
+@media (min-width: 768px) {
+  .app-header {
+    padding: 2rem 1rem;
+  }
+  
+  .header-content {
+    max-width: 700px;
+  }
+  
+  .app-title {
+    font-size: 1.5rem;
+  }
+  
+  .date-selector {
+    margin: 2rem auto;
+    max-width: 500px;
+  }
+  
+  .results-section {
+    padding: 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  
+  .results-actions {
+    max-width: 400px;
+    margin: 2rem auto 0;
+  }
+  
+  .analysis-card {
+    margin-bottom: 1.5rem;
+  }
+  
+  .card-content {
+    padding: 2rem;
+  }
+  
+  .loading-content {
+    padding: 3rem;
+    max-width: 400px;
+  }
+  
+  .error-content {
+    max-width: 500px;
+    padding: 3rem;
+  }
+  
+  /* Grid layout para cambios en tablet */
+  .changes-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .areas-tags {
+    justify-content: center;
+  }
+}
+
+/* Tablet Landscape */
+@media (min-width: 1024px) {
+  .app-header {
+    padding: 3rem 2rem;
+  }
+  
+  .header-content {
+    max-width: 800px;
+  }
+  
+  .app-title {
+    font-size: 1.75rem;
+  }
+  
+  .date-selector {
+    max-width: 600px;
+    padding: 2rem;
+  }
+  
+  .results-section {
+    max-width: 900px;
+    padding: 3rem 2rem;
+  }
+  
+  .analysis-card {
+    margin-bottom: 2rem;
+  }
+  
+  .card-content {
+    padding: 2.5rem;
+  }
+  
+  /* Grid layout para cambios en desktop */
+  .changes-list {
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  .opinions-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  .results-actions {
+    max-width: 500px;
+  }
+}
+
+/* Desktop Large */
+@media (min-width: 1200px) {
+  .header-content {
+    max-width: 1000px;
+  }
+  
+  .date-selector {
+    max-width: 700px;
+  }
+  
+  .results-section {
+    max-width: 1100px;
+  }
+  
+  /* Layout de dos columnas para desktop grande */
+  .results-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 2rem;
+  }
+  
+  .main-analysis {
+    grid-column: 1;
+  }
+  
+  .side-analysis {
+    grid-column: 2;
+  }
+}
+
+/* Landscape móvil */
+@media (max-height: 500px) and (orientation: landscape) {
+  .app-header {
+    padding: 1rem;
+  }
+  
+  .app-title {
+    font-size: 1.125rem;
+  }
+  
+  .header-subtitle p {
+    font-size: 0.75rem;
+  }
+  
+  .date-selector {
+    margin: 1rem;
+    padding: 1rem;
+  }
+  
+  .loading-overlay .loading-content {
+    padding: 1rem;
+    max-width: 250px;
+  }
+  
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    margin-bottom: 1rem;
+  }
+  
+  .loading-title {
+    font-size: 1rem;
+  }
+  
+  .loading-message {
+    font-size: 0.75rem;
+  }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .logo, .card-icon, .button-icon, .calendar-icon {
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+  }
+}
+
+/* Dark mode support (para cuando Telegram esté en modo oscuro) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --white: #1a1a1a;
+    --light-gray: #2d2d2d;
+    --gray: #8e8e93;
+    --dark-gray: #ffffff;
+    --secondary-blue: rgba(0, 136, 204, 0.2);
+  }
+  
+  .analysis-card {
+    background: #2d2d2d;
+    border-color: rgba(0, 136, 204, 0.3);
+  }
+  
+  .card-header {
+    background: rgba(0, 136, 204, 0.1);
+    border-bottom-color: rgba(0, 136, 204, 0.3);
+  }
+  
+  .change-item, .opinion-item {
+    background: #3d3d3d;
+  }
+  
+  .date-input {
+    background: #2d2d2d;
+    color: var(--dark-gray);
+    border-color: rgba(0, 136, 204, 0.3);
+  }
+  
+  .error-content, .loading-overlay {
+    background: rgba(26, 26, 26, 0.95);
+  }
+  
+  .error-content {
+    background: #2d2d2d;
+  }
+}
+
+/* Reducir animaciones para usuarios que prefieren menos movimiento */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  .loading-spinner .spinner-ring {
+    animation: none;
+  }
+  
+  .progress-fill {
+    animation: none;
+    width: 50%;
+  }
+}
+
+/* Print styles */
+@media print {
+  .app-header,
+  .date-selector,
+  .results-actions,
+  .loading-overlay,
+  .error-modal {
+    display: none !important;
+  }
+  
+  .results-section {
+    padding: 0;
+    margin: 0;
+    max-width: none;
+  }
+  
+  .analysis-card {
+    break-inside: avoid;
+    box-shadow: none;
+    border: 1px solid #ccc;
+    margin-bottom: 1rem;
+  }
+  
+  .card-header {
+    background: #f5f5f5 !important;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+}
+
+/* Accesibilidad - Focus visible mejorado */
+@media (prefers-reduced-motion: no-preference) {
+  .analyze-button:focus-visible,
+  .action-button:focus-visible,
+  .error-button:focus-visible,
+  .date-input:focus-visible {
+    outline: 2px solid var(--primary-blue);
+    outline-offset: 2px;
+  }
+}
+
+/* Hover states solo en dispositivos que soportan hover */
+@media (hover: hover) and (pointer: fine) {
+  .analyze-button:hover:not(:disabled),
+  .action-button:hover,
+  .error-button:hover {
+    transform: translateY(-1px);
+  }
+  
+  .area-tag:hover {
+    background: var(--primary-dark);
+    cursor: default;
+  }
+  
+  .change-item:hover,
+  .opinion-item:hover {
+    background: #f0f0f0;
+  }
+}
+
+/* Estilos específicos para dispositivos táctiles */
+@media (hover: none) and (pointer: coarse) {
+  .analyze-button,
+  .action-button,
+  .error-button {
+    min-height: 44px; /* Tamaño mínimo recomendado para touch */
+  }
+  
+  .date-input {
+    min-height: 44px;
+  }
+  
+  .area-tag {
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+  }
+}
+
+/* Estilos para pantallas muy anchas */
+@media (min-width: 1400px) {
+  .results-section {
+    max-width: 1200px;
+  }
+  
+  .date-selector {
+    max-width: 800px;
+  }
+  
+  /* Layout de tres columnas para pantallas muy anchas */
+  .changes-list {
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  }
+  
+  .opinions-list {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
+}

@@ -1,0 +1,234 @@
+# ============================================================================
+# Terraform Configuration for Boletín Oficial Telegram App
+# ============================================================================
+# 
+# INSTRUCCIONES:
+# 1. Copiar este archivo a terraform.tfvars: copy terraform.tfvars.example terraform.tfvars
+# 2. Completar los valores marcados como REQUERIDOS
+# 3. Ajustar configuraciones opcionales según necesidades
+# 4. NUNCA commitear terraform.tfvars al repositorio (contiene credenciales)
+#
+# Para más información, ver: README.md
+# ============================================================================
+
+# ============================================================================
+# CONFIGURACIÓN DEL PROYECTO
+# ============================================================================
+
+# Nombre del proyecto (usado para nombrar recursos)
+project_name = "boletin-oficial-telegram-app"
+
+# Entorno de despliegue (dev, staging, prod)
+environment = "prod"
+
+# ============================================================================
+# CONFIGURACIÓN DE AWS
+# ============================================================================
+
+# Región de AWS donde desplegar los recursos
+# Recomendado: us-east-1 (Virginia) por menor latencia y más servicios
+aws_region = "us-east-1"
+
+# ============================================================================
+# CONFIGURACIÓN DE LAMBDA FUNCTION
+# ============================================================================
+
+# Nombre de la función Lambda
+lambda_function_name = "boletin-oficial-analyzer"
+
+# Runtime de Python (recomendado: python3.11)
+lambda_runtime = "python3.11"
+
+# Timeout en segundos (máximo: 900 = 15 minutos)
+# Recomendado: 300 (5 minutos) para análisis normales
+lambda_timeout = 300
+
+# Memoria en MB (128-10240, en incrementos de 1MB)
+# Más memoria = más CPU. Recomendado: 1024MB mínimo
+lambda_memory_size = 1024
+
+# Ruta del archivo ZIP de despliegue (generado automáticamente)
+lambda_zip_path = "lambda_deployment.zip"
+
+# ============================================================================
+# CREDENCIALES Y CONFIGURACIÓN SENSIBLE (REQUERIDO)
+# ============================================================================
+
+# GOOGLE GEMINI API KEY (REQUERIDO)
+# Obtener en: https://console.cloud.google.com/ > APIs & Services > Credentials
+# Asegurar que Generative AI API esté habilitada
+google_api_key = "your-google-gemini-api-key-here"
+
+# MONGODB ATLAS CONNECTION STRING (REQUERIDO)
+# Formato: mongodb+srv://usuario:password@cluster.mongodb.net/?retryWrites=true&w=majority
+# Obtener en: MongoDB Atlas > Connect > Connect your application
+mongodb_connection_string = "mongodb+srv://username:password@cluster0.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+
+# Nombre de la base de datos MongoDB
+mongodb_database = "BoletinOficial"
+
+# Nombre de la colección MongoDB
+mongodb_collection = "boletin-oficial"
+
+# ============================================================================
+# CONFIGURACIÓN DE LANGCHAIN Y LLM
+# ============================================================================
+
+# Modelo de LLM a usar (geminigratuito)
+langchain_model = "gemini-2.5-flash"
+
+# Temperatura del modelo (0.0-2.0, mayor = más creativo)
+langchain_temperature = "1"
+
+# ============================================================================
+# CONFIGURACIÓN DE LA APLICACIÓN
+# ============================================================================
+
+# Número máximo de reintentos para operaciones fallidas
+max_retry_attempts = "3"
+
+# Timeout para requests al LLM (segundos)
+llm_request_timeout = "60"
+
+# ============================================================================
+# CONFIGURACIÓN DE API GATEWAY
+# ============================================================================
+
+# Nombre del API Gateway
+api_gateway_name = "boletin-oficial-api"
+
+# Descripción del API Gateway
+api_gateway_description = "API for Boletin Oficial Telegram App"
+
+# Nombre del stage de despliegue
+api_gateway_stage_name = "v1"
+
+# ============================================================================
+# CONFIGURACIÓN DE RATE LIMITING
+# ============================================================================
+
+# Límite de requests por segundo
+api_throttle_rate_limit = 100
+
+# Límite de burst (picos de tráfico)
+api_throttle_burst_limit = 200
+
+# ============================================================================
+# CONFIGURACIÓN DE CORS
+# ============================================================================
+
+# Orígenes permitidos para CORS
+# IMPORTANTE: Cambiar por los dominios reales de tu aplicación
+cors_allowed_origins = [
+  "https://your-telegram-mini-app.vercel.app",
+  "https://web.telegram.org"
+]
+
+# Métodos HTTP permitidos
+cors_allowed_methods = ["GET", "POST", "OPTIONS"]
+
+# Headers permitidos
+cors_allowed_headers = [
+  "Content-Type",
+  "X-Amz-Date", 
+  "Authorization",
+  "X-Api-Key",
+  "X-Amz-Security-Token"
+]
+
+# ============================================================================
+# CONFIGURACIÓN DE SEGURIDAD
+# ============================================================================
+
+# Configuration is now passed via environment variables directly to Lambda
+
+# Rangos de IP permitidos (IMPORTANTE: Restringir en producción)
+# Ejemplo para restringir: ["203.0.113.0/24", "198.51.100.0/24"]
+allowed_ip_ranges = ["0.0.0.0/0"]
+
+# ============================================================================
+# CONFIGURACIÓN DE VPC (OPCIONAL)
+# ============================================================================
+
+# Habilitar configuración de VPC (false para simplicidad)
+enable_vpc = false
+
+# ID de VPC (requerido si enable_vpc = true)
+vpc_id = ""
+
+# IDs de subnets (requerido si enable_vpc = true)
+subnet_ids = []
+
+# ============================================================================
+# CONFIGURACIÓN DE WAF (OPCIONAL)
+# ============================================================================
+
+# Habilitar AWS WAF para protección adicional
+enable_waf = false
+
+# Límite de rate para WAF (requests por 5 minutos)
+waf_rate_limit = 2000
+
+# ============================================================================
+# TAGS ADICIONALES (OPCIONAL)
+# ============================================================================
+
+# Tags adicionales para todos los recursos
+additional_tags = {
+  Owner       = "your-name"
+  CostCenter  = "development"
+  Application = "telegram-bot"
+  Environment = "production"
+  Project     = "boletin-oficial"
+}
+
+# ============================================================================
+# CONFIGURACIONES AVANZADAS (OPCIONAL)
+# ============================================================================
+
+# Configuraciones adicionales para casos de uso específicos
+# Descomentar y ajustar según necesidades:
+
+# Para entornos de alta disponibilidad:
+# lambda_memory_size = 2048
+# lambda_timeout = 600
+# api_throttle_rate_limit = 500
+
+# Para desarrollo/testing:
+# environment = "dev"
+# lambda_memory_size = 512
+# lambda_timeout = 180
+
+# Para producción con alta seguridad:
+# enable_waf = true
+# allowed_ip_ranges = ["tu-ip-publica/32"]
+# enable_vpc = true
+
+# ============================================================================
+# NOTAS IMPORTANTES
+# ============================================================================
+#
+# 1. CREDENCIALES:
+#    - Nunca commitear este archivo con credenciales reales
+#    - Usar variables de entorno para CI/CD
+#    - Rotar credenciales regularmente
+#    - Las credenciales se pasan como variables de entorno
+#
+# 2. COSTOS:
+#    - Lambda: ~$0.20 por 1M requests + tiempo de ejecución
+#    - API Gateway: ~$3.50 por 1M requests
+#    - CloudWatch: ~$0.50 por GB de logs
+#    - Variables de entorno: GRATIS
+#
+# 3. LÍMITES:
+#    - Lambda timeout máximo: 15 minutos
+#    - Lambda memoria máxima: 10,240 MB
+#    - API Gateway timeout: 30 segundos
+#    - Payload máximo: 6 MB
+#
+# 4. REGIONES RECOMENDADAS:
+#    - us-east-1: Más servicios, menor costo
+#    - us-west-2: Buena alternativa
+#    - eu-west-1: Para usuarios europeos
+#
+# ============================================================================
