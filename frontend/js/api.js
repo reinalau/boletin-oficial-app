@@ -2,11 +2,11 @@
 
 class APIClient {
   constructor() {
-    // URL base de la API - cambiar por la URL real de tu API Gateway
-    this.baseURL = 'https://your-api-gateway-url.amazonaws.com/prod';
-    this.timeout = 60000; // 60 segundos
-    this.retryAttempts = 3;
-    this.retryDelay = 1000; // 1 segundo
+    // URL base de la API - URL real de tu API Gateway
+    this.baseURL = 'https://xf4vwg8gq7.execute-api.us-east-1.amazonaws.com/v1';
+    this.timeout = 120000; // 120 segundos (para análisis largos)
+    this.retryAttempts = 2; // Reducido porque los análisis son largos
+    this.retryDelay = 2000; // 2 segundos
   }
 
   /**
@@ -16,12 +16,18 @@ class APIClient {
    * @returns {Promise<Object>} Resultado del análisis
    */
   async analyzeDate(date, forceReanalysis = false) {
+    console.log('🔍 APIClient.analyzeDate called with:', { date, forceReanalysis });
+    
+    const payload = {
+      fecha: date,
+      forzar_reanalisis: forceReanalysis
+    };
+    
+    console.log('📤 Sending payload:', JSON.stringify(payload, null, 2));
+    
     const response = await this.makeRequest('/analyze', {
       method: 'POST',
-      body: JSON.stringify({
-        fecha: date,
-        forzar_reanalisis: forceReanalysis
-      })
+      body: JSON.stringify(payload)
     });
 
     if (!response.success) {
@@ -54,7 +60,7 @@ class APIClient {
    */
   async makeRequest(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
-    
+
     const defaultOptions = {
       method: 'GET',
       headers: {
@@ -70,7 +76,7 @@ class APIClient {
     for (let attempt = 1; attempt <= this.retryAttempts; attempt++) {
       try {
         const response = await this.fetchWithTimeout(url, finalOptions);
-        
+
         if (!response.ok) {
           const errorData = await this.parseErrorResponse(response);
           throw new APIError(errorData.message, response.status, errorData.code);
@@ -113,7 +119,7 @@ class APIClient {
         ...options,
         signal: controller.signal
       });
-      
+
       clearTimeout(timeoutId);
       return response;
     } catch (error) {
@@ -280,27 +286,27 @@ class APIConfig {
   static getConfig() {
     // Detectar entorno
     const hostname = window.location.hostname;
-    
+
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      // Desarrollo local
+      // Desarrollo local - usar tu API Gateway real
       return {
-        baseURL: 'http://localhost:3000/api',
-        timeout: 30000,
+        baseURL: 'https://xf4vwg8gq7.execute-api.us-east-1.amazonaws.com/v1',
+        timeout: 120000, // 2 minutos para análisis largos
         retryAttempts: 2
       };
     } else if (hostname.includes('vercel.app') || hostname.includes('netlify.app')) {
-      // Staging/Preview
+      // Staging/Preview - usar la misma API
       return {
-        baseURL: 'https://your-staging-api.amazonaws.com/dev',
-        timeout: 45000,
-        retryAttempts: 3
+        baseURL: 'https://xf4vwg8gq7.execute-api.us-east-1.amazonaws.com/v1',
+        timeout: 120000,
+        retryAttempts: 2
       };
     } else {
-      // Producción
+      // Producción - usar la misma API
       return {
-        baseURL: 'https://your-api-gateway-url.amazonaws.com/prod',
-        timeout: 60000,
-        retryAttempts: 3
+        baseURL: 'https://xf4vwg8gq7.execute-api.us-east-1.amazonaws.com/v1',
+        timeout: 120000,
+        retryAttempts: 2
       };
     }
   }
@@ -308,11 +314,11 @@ class APIConfig {
   static createClient() {
     const config = this.getConfig();
     const client = new APIClient();
-    
+
     client.setBaseURL(config.baseURL);
     client.setTimeout(config.timeout);
     client.setRetryAttempts(config.retryAttempts);
-    
+
     return client;
   }
 }

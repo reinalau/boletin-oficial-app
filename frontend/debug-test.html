@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Test - API Boletín Oficial</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .test-section { background: #f5f5f5; padding: 20px; margin: 20px 0; border-radius: 5px; }
+        button { padding: 10px 20px; margin: 10px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        .result { background: white; padding: 15px; margin: 10px 0; border-radius: 5px; font-family: monospace; white-space: pre-wrap; }
+        .success { border-left: 5px solid green; }
+        .error { border-left: 5px solid red; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug Test - Comparación Frontend vs Postman</h1>
+    
+    <div class="test-section">
+        <h3>Test 1: Payload que funciona en Postman</h3>
+        <button onclick="testPostmanPayload()">🟢 Test Payload Postman</button>
+        <div id="postman-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Test 2: Payload desde input de fecha</h3>
+        <input type="date" id="dateInput" value="2025-08-06">
+        <button onclick="testFrontendPayload()">🔵 Test Payload Frontend</button>
+        <div id="frontend-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Test 3: Diferentes formatos de fecha</h3>
+        <button onclick="testDateFormats()">🟡 Test Formatos</button>
+        <div id="formats-result" class="result"></div>
+    </div>
+
+    <script>
+        const API_URL = 'https://xf4vwg8gq7.execute-api.us-east-1.amazonaws.com/v1/analyze';
+
+        async function testPostmanPayload() {
+            const result = document.getElementById('postman-result');
+            result.innerHTML = '⏳ Probando payload que funciona en Postman...';
+            
+            // Payload exacto que funciona en Postman
+            const payload = {
+                "fecha": "2025-08-06",
+                "forzar_reanalisis": false
+            };
+            
+            console.log('🟢 Postman payload:', payload);
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    result.className = 'result success';
+                    result.innerHTML = `✅ ÉXITO (Postman payload)
+Status: ${response.status}
+Response: ${JSON.stringify(data, null, 2)}`;
+                } else {
+                    result.className = 'result error';
+                    result.innerHTML = `❌ ERROR (Postman payload)
+Status: ${response.status}
+Response: ${JSON.stringify(data, null, 2)}`;
+                }
+                
+            } catch (error) {
+                result.className = 'result error';
+                result.innerHTML = `❌ NETWORK ERROR (Postman payload)
+Error: ${error.message}`;
+            }
+        }
+
+        async function testFrontendPayload() {
+            const result = document.getElementById('frontend-result');
+            const dateInput = document.getElementById('dateInput');
+            
+            result.innerHTML = '⏳ Probando payload desde frontend...';
+            
+            // Payload como lo genera el frontend
+            const fecha = dateInput.value;
+            const payload = {
+                fecha: fecha,
+                forzar_reanalisis: false
+            };
+            
+            console.log('🔵 Frontend payload:', payload);
+            console.log('🔵 Fecha raw:', fecha);
+            console.log('🔵 Fecha type:', typeof fecha);
+            console.log('🔵 Date object:', new Date(fecha));
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    result.className = 'result success';
+                    result.innerHTML = `✅ ÉXITO (Frontend payload)
+Status: ${response.status}
+Fecha enviada: "${fecha}"
+Response: ${JSON.stringify(data, null, 2)}`;
+                } else {
+                    result.className = 'result error';
+                    result.innerHTML = `❌ ERROR (Frontend payload)
+Status: ${response.status}
+Fecha enviada: "${fecha}"
+Response: ${JSON.stringify(data, null, 2)}`;
+                }
+                
+            } catch (error) {
+                result.className = 'result error';
+                result.innerHTML = `❌ NETWORK ERROR (Frontend payload)
+Fecha enviada: "${fecha}"
+Error: ${error.message}`;
+            }
+        }
+
+        async function testDateFormats() {
+            const result = document.getElementById('formats-result');
+            result.innerHTML = '⏳ Probando diferentes formatos de fecha...';
+            
+            const formats = [
+                "2025-08-06",
+                "06/08/2025", 
+                "2025-06-08",
+                "08/06/2025",
+                new Date("2025-08-06").toISOString().split('T')[0],
+                new Date("2025-08-06").toLocaleDateString('en-CA')
+            ];
+            
+            let results = '🟡 COMPARACIÓN DE FORMATOS:\n\n';
+            
+            for (let i = 0; i < formats.length; i++) {
+                const format = formats[i];
+                results += `Formato ${i + 1}: "${format}"\n`;
+                results += `Tipo: ${typeof format}\n`;
+                
+                try {
+                    const dateObj = new Date(format);
+                    results += `Date object: ${dateObj}\n`;
+                    results += `ISO: ${dateObj.toISOString()}\n`;
+                    results += `Valid: ${!isNaN(dateObj.getTime())}\n`;
+                } catch (e) {
+                    results += `Error parsing: ${e.message}\n`;
+                }
+                
+                results += '\n---\n\n';
+            }
+            
+            result.className = 'result';
+            result.innerHTML = results;
+        }
+
+        // Auto-ejecutar al cargar
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔍 Debug page loaded');
+            console.log('🌐 API URL:', API_URL);
+        });
+    </script>
+</body>
+</html>

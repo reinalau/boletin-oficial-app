@@ -3,11 +3,21 @@
 class Utils {
   /**
    * Formatea una fecha en formato español
-   * @param {string} dateString - Fecha en formato ISO
+   * @param {string} dateString - Fecha en formato ISO o YYYY-MM-DD
    * @returns {string} Fecha formateada
    */
   static formatDate(dateString) {
-    const date = new Date(dateString);
+    // Si es formato YYYY-MM-DD, agregar tiempo local para evitar problemas de zona horaria
+    let date;
+    if (dateString && dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      // Formato YYYY-MM-DD - crear fecha local
+      const [year, month, day] = dateString.split('-');
+      date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    } else {
+      // Otros formatos
+      date = new Date(dateString);
+    }
+    
     return date.toLocaleDateString('es-AR', {
       year: 'numeric',
       month: 'long',
@@ -17,11 +27,21 @@ class Utils {
 
   /**
    * Formatea una fecha para mostrar en formato corto
-   * @param {string} dateString - Fecha en formato ISO
+   * @param {string} dateString - Fecha en formato ISO o YYYY-MM-DD
    * @returns {string} Fecha formateada corta
    */
   static formatDateShort(dateString) {
-    const date = new Date(dateString);
+    // Si es formato YYYY-MM-DD, agregar tiempo local para evitar problemas de zona horaria
+    let date;
+    if (dateString && dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      // Formato YYYY-MM-DD - crear fecha local
+      const [year, month, day] = dateString.split('-');
+      date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    } else {
+      // Otros formatos
+      date = new Date(dateString);
+    }
+    
     return date.toLocaleDateString('es-AR', {
       day: '2-digit',
       month: '2-digit',

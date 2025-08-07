@@ -321,11 +321,26 @@ def check_existing_analysis(fecha: str) -> Optional[Dict[str, Any]]:
         dict or None: Existing analysis or None if not found
     """
     try:
-        return database_service.get_analysis_by_date(fecha)
-    except Exception as e:
-        error_handler.log_warning('cache_check_failed', {
+        error_handler.log_info('cache_check_starting', {
             'fecha': fecha,
-            'error': str(e)
+            'fecha_type': type(fecha).__name__,
+            'fecha_length': len(fecha)
+        })
+        
+        result = database_service.get_analysis_by_date(fecha)
+        
+        error_handler.log_info('cache_check_completed', {
+            'fecha': fecha,
+            'found': result is not None,
+            'result_keys': list(result.keys()) if result else None
+        })
+        
+        return result
+    except Exception as e:
+        error_handler.log_error(ErrorCode.DATABASE_QUERY_ERROR, e, {
+            'fecha': fecha,
+            'error': str(e),
+            'error_type': type(e).__name__
         })
         return None
 

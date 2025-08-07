@@ -312,9 +312,9 @@ class BoletinApp {
       const opinionElement = Utils.createElement('div', { className: 'opinion-item' });
       
       opinionElement.innerHTML = `
-        <div class="opinion-source">${Utils.sanitizeHtml(opinion.fuente || 'Fuente desconocida')}</div>
-        <div class="opinion-text">${Utils.sanitizeHtml(opinion.opinion || 'Sin opinión')}</div>
-        <div class="opinion-date">${Utils.formatDate(opinion.fecha_opinion || new Date().toISOString())}</div>
+        <div class="opinion-source">${Utils.sanitizeHtml(opinion.medio || opinion.fuente || 'Fuente desconocida')}</div>
+        <div class="opinion-text">${Utils.sanitizeHtml(opinion.opinion_resumen || opinion.opinion || 'Sin opinión')}</div>
+        <div class="opinion-date">${Utils.formatDate(opinion.fecha_publicacion || opinion.fecha_opinion || new Date().toISOString())}</div>
       `;
       
       container.appendChild(opinionElement);

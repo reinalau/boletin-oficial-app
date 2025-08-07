@@ -406,9 +406,7 @@ IMPORTANTE:
         
         validated_result['cambios_principales'] = validated_cambios
         
-        # Truncar resumen si es muy largo
-        if len(validated_result['resumen']) > 500:
-            validated_result['resumen'] = validated_result['resumen'][:500] + "..."
+        # Mantener resumen completo (sin truncar)
         
         logger.info(f"Respuesta validada: {len(validated_cambios)} cambios principales identificados")
         return validated_result
@@ -466,9 +464,7 @@ IMPORTANTE:
                     if validated_opinion['relevancia'] not in ['alta', 'media', 'baja']:
                         validated_opinion['relevancia'] = 'media'
                     
-                    # Truncar campos largos
-                    if len(validated_opinion['opinion_resumen']) > 300:
-                        validated_opinion['opinion_resumen'] = validated_opinion['opinion_resumen'][:300] + "..."
+                    # Mantener opinión completa (sin truncar)
                     
                     validated_opinions.append(validated_opinion)
             

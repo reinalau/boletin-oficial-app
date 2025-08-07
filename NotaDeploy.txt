@@ -11,6 +11,14 @@ cd scripts\iac;terraform validate
 cd scripts\iac;terraform plan -var-file="terraform.tfvars"
 cd scripts\iac; terraform apply -var-file="terraform.tfvars" -auto-approve
 
+--------------------------
+
+para probar el frontend pegar url:
+frontend/js/api.js - Cliente API principal
+frontend/test.html - Página de prueba principal
+frontend/test-simple.js - Script de prueba simple
+frontend/debug-test.html - Página de debug
+
 
 ✅ Deployment completado con éxito:
 Lambda Layer: Versión 2 con dependencias compiladas para Linux
