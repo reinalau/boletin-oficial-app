@@ -39,12 +39,11 @@ echo 🧪 Probando conexión a MongoDB...
 echo ================================
 
 REM Ejecutar test de conexión real
-python test_real_mongodb.py
+pytest tests/test_database_service.py -v
 
 echo.
-echo 🧪 Para ejecutar más tests:
-echo   python test_real_mongodb.py
-echo   pytest tests/test_database_service.py -v
-echo.
+echo 🧪 Probando conexión a MongoDB...
+echo ================================
+
 
 pause

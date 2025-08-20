@@ -47,7 +47,7 @@ def test_llm_direct_service():
     print("⏳ Esto puede tomar 30-90 segundos con thinking habilitado...")
     
     try:
-        test_date = "2025-08-04"
+        test_date = "2025-08-19"
         result = llm_service.analyze_normativa(test_date)
         
         print("✅ Análisis completado!")
@@ -98,7 +98,7 @@ if __name__ == "__main__":
     print("=" * 40)
     print("Este test usa el nuevo servicio basado en")
     print("geminiPrompt.py con thinking y Google Search.")
-    print("Siempre analiza la fecha actual (01/08/2025).")
+    print("Siempre analiza la fecha actual que le seteamos en este archivo.")
     
     success = test_llm_direct_service()
     

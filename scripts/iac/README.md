@@ -18,10 +18,9 @@ scripts/iac/
 
 ### Core Infrastructure
 - **AWS Lambda Function**: Función principal para análisis de normativa
-- **API Gateway**: REST API para exponer endpoints HTTP
+- **Lambda Function URL**: Endpoint HTTPS directo (sin API Gateway)
 - **IAM Roles & Policies**: Permisos y roles de seguridad
 - **CloudWatch Log Groups**: Logging y monitoreo
-- **Systems Manager Parameter Store**: Almacenamiento seguro de credenciales (GRATIS)
 
 ### Security & Monitoring
 - **WAF (opcional)**: Web Application Firewall para protección
@@ -124,18 +123,17 @@ enable_waf = true
 ### Producción
 ```hcl
 environment = "prod"
-lambda_memory_size = 2048
-lambda_timeout = 600
-enable_waf = true
-enable_vpc = true
+lambda_memory_size = 500
+lambda_timeout = 360
+langchain_temperature = "0"
+llm_request_timeout = "360"
 ```
 
 ## 📊 Outputs Importantes
 
 Después del despliegue, Terraform proporcionará:
 
-- `api_gateway_url`: URL base del API Gateway
-- `analyze_endpoint_url`: URL completa del endpoint de análisis
+- `lambda_function_url`: URL directa de la función Lambda
 - `lambda_function_name`: Nombre de la función Lambda
 - `lambda_function_arn`: ARN de la función Lambda
 
@@ -148,11 +146,9 @@ Después del despliegue, Terraform proporcionará:
 
 ### Permisos AWS Requeridos
 El usuario/rol de AWS necesita permisos para:
-- Lambda (crear, actualizar, eliminar funciones)
-- API Gateway (crear, configurar APIs)
+- Lambda (crear, actualizar, eliminar funciones y Function URLs)
 - IAM (crear roles y políticas)
 - CloudWatch (crear log groups)
-- Secrets Manager (crear y gestionar secrets)
 
 ## 🧹 Limpieza
 

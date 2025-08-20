@@ -18,18 +18,18 @@ Esta aplicación permite a los usuarios consultar y analizar la normativa argent
 ## 🏗️ Arquitectura
 
 ```
-┌─────────────────┐    ┌──────────────┐     ┌─────────────────┐
-│ Telegram Mini   │───▶│ API Gateway  │───▶│ AWS Lambda      │
-│ App (Frontend)  │    │              │     │ Function        │
-└─────────────────┘    └──────────────┘     └─────────────────┘
-                                                     │
-                       ┌─────────────────────────────┼──────────┐
-                       │                             ▼          │
-                       │    ┌──────────────┐  ┌─────────────┐   │
-                       │    │ LLM Service  │  │ Database    │   │
-                       │    │ (Direct)     │  │ Service     │   │
-                       │    └──────────────┘  └─────────────┘   │
-                       └────────────────────────────────────────┘
+┌─────────────────┐    ┌─────────────────┐
+│ Telegram Mini   │───▶│ AWS Lambda      │
+│ App (Frontend)  │    │ Function URL    │
+└─────────────────┘    └─────────────────┘
+                                │
+                       ┌────────┼──────────┐
+                       │        ▼          │
+                       │ ┌──────────────┐  │ ┌─────────────┐
+                       │ │ LLM Service  │  │ │ Database    │
+                       │ │ (Direct)     │  │ │ Service     │
+                       │ └──────────────┘  │ └─────────────┘
+                       └───────────────────┘
                         │                   │                │
                         ▼                   ▼                ▼
                   ┌─────────────────┐  ┌──────────────┐  ┌─────────────┐
@@ -53,7 +53,7 @@ Antes de comenzar, asegúrate de tener instalado:
 
 1. **Cuenta AWS** con permisos para crear:
    - Lambda functions
-   - API Gateway
+   - Lambda Function URLs
    - IAM roles y policies
    - CloudWatch logs
 
@@ -105,12 +105,11 @@ mongodb_collection = "boletin-oficial"
 
 # Configuración de Lambda
 lambda_function_name = "boletin-oficial-analyzer"
-lambda_memory_size   = 1024
-lambda_timeout       = 300
+lambda_memory_size   = 500
+lambda_timeout       = 360
 
-# Configuración de API Gateway
-api_gateway_name       = "boletin-oficial-api"
-api_gateway_stage_name = "v1"
+# Configuración opcional
+cors_allowed_origins = ["*"]
 ```
 
 ### Paso 3: Configurar credenciales AWS
@@ -148,7 +147,7 @@ El script realizará automáticamente:
 3. ✅ Inicialización de Terraform
 4. ✅ Planificación del despliegue
 5. ✅ Aplicación de la infraestructura
-6. ✅ Configuración de API Gateway
+6. ✅ Configuración de Lambda Function URL
 
 ### Paso 5: Verificar el despliegue
 
@@ -158,12 +157,12 @@ Una vez completado el despliegue, verás información similar a:
 🎉 Deployment completed successfully!
 
 📋 Important information:
-  📡 API Gateway URL: https://abc123def.execute-api.us-east-1.amazonaws.com/v1
-  🔍 Analyze Endpoint: https://abc123def.execute-api.us-east-1.amazonaws.com/v1/analyze
+  📡 Lambda Function URL: https://w6scjpjua3bmj272d2dqhxy2ve0yrkpf.lambda-url.us-east-1.on.aws/
+  🔍 Direct HTTPS Endpoint: https://w6scjpjua3bmj272d2dqhxy2ve0yrkpf.lambda-url.us-east-1.on.aws/
 
 ⚠️  Next steps:
   1. Test your API using the test script: python test_api.py
-  2. Configure your Telegram Mini App to use the API endpoint
+  2. Configure your Telegram Mini App to use the Lambda Function URL
   3. Monitor logs in AWS CloudWatch
 ```
 
@@ -172,7 +171,7 @@ Una vez completado el despliegue, verás información similar a:
 Ejecuta las pruebas automatizadas:
 
 ```bash
-python test_api.py https://tu-api-gateway-url.execute-api.us-east-1.amazonaws.com/v1
+python test_api.py https://xxxxxxxxxxx.lambda-url.us-east-1.on.aws/
 ```
 
 ## 🔧 Configuración
@@ -222,7 +221,7 @@ additional_tags = {
 ### Endpoint principal
 
 ```
-POST /analyze
+POST https://[function-url].lambda-url.[region].on.aws/
 ```
 
 ### Formato de request
@@ -308,23 +307,23 @@ POST /analyze
 
 **Análisis de fecha específica:**
 ```bash
-curl -X POST https://tu-api.execute-api.us-east-1.amazonaws.com/v1/analyze \
+curl -X POST https://w6scjpjua3bmj272d2dqhxy2ve0yrkpf.lambda-url.us-east-1.on.aws/ \
   -H "Content-Type: application/json" \
   -d '{"fecha": "2024-01-15"}'
 ```
 
 **Forzar nuevo análisis:**
 ```bash
-curl -X POST https://tu-api.execute-api.us-east-1.amazonaws.com/v1/analyze \
+curl -X POST https://w6scjpjua3bmj272d2dqhxy2ve0yrkpf.lambda-url.us-east-1.on.aws/ \
   -H "Content-Type: application/json" \
   -d '{"fecha": "2024-01-15", "forzar_reanalisis": true}'
 ```
 
 **Análisis de fecha actual:**
 ```bash
-curl -X POST https://tu-api.execute-api.us-east-1.amazonaws.com/v1/analyze \
+curl -X POST https://w6scjpjua3bmj272d2dqhxy2ve0yrkpf.lambda-url.us-east-1.on.aws/ \
   -H "Content-Type: application/json" \
-  -d '{}'
+  -d '{"fecha": "2025-08-07"}'
 ```
 
 ## 🧪 Testing
@@ -335,16 +334,16 @@ El proyecto incluye un script de pruebas completo:
 
 ```bash
 # Ejecutar todas las pruebas
-python test_api.py https://tu-api-url.execute-api.us-east-1.amazonaws.com/v1
+python test_api.py https://w6scjpjua3bmj272d2dqhxy2ve0yrkpf.lambda-url.us-east-1.on.aws/
 
 # Ejecutar con datos de prueba
-python test_api.py https://tu-api-url.execute-api.us-east-1.amazonaws.com/v1 --load-test-data
+python test_api.py https://w6scjpjua3bmj272d2dqhxy2ve0yrkpf.lambda-url.us-east-1.on.aws/ --load-test-data
 
 # Ejecutar prueba específica
-python test_api.py https://tu-api-url.execute-api.us-east-1.amazonaws.com/v1 --single-test health
+python test_api.py https://w6scjpjua3bmj272d2dqhxy2ve0yrkpf.lambda-url.us-east-1.on.aws/ --single-test health
 
 # Con timeout personalizado
-python test_api.py https://tu-api-url.execute-api.us-east-1.amazonaws.com/v1 --timeout 120
+python test_api.py https://w6scjpjua3bmj272d2dqhxy2ve0yrkpf.lambda-url.us-east-1.on.aws/ --timeout 120
 ```
 
 ### Tipos de pruebas incluidas
@@ -376,7 +375,6 @@ pytest tests/ --cov=services --cov=utils
 Los logs se almacenan automáticamente en CloudWatch:
 
 - **Lambda logs**: `/aws/lambda/boletin-oficial-analyzer`
-- **API Gateway logs**: `API-Gateway-Execution-Logs_[api-id]/v1`
 
 ### Métricas importantes
 
@@ -513,8 +511,8 @@ Para debugging detallado:
 # Ver logs de Lambda en tiempo real
 aws logs tail /aws/lambda/boletin-oficial-analyzer --follow
 
-# Ver logs de API Gateway
-aws logs tail API-Gateway-Execution-Logs_[api-id]/v1 --follow
+# Ver configuración de Function URL
+aws lambda get-function-url-config --function-name boletin-oficial-analyzer
 
 # Filtrar por errores
 aws logs filter-log-events \
@@ -625,22 +623,148 @@ Si encuentras problemas:
    - Pasos para reproducir
    - Configuración (sin credenciales)
 
+## 📱 Configuración de Telegram Mini App (Opcional)
+
+Una vez que tengas el backend y frontend desplegados, puedes configurar la aplicación como una Telegram Mini App para una experiencia nativa.
+
+### Prerrequisitos
+
+- ✅ Backend desplegado (Lambda Function URL funcionando)
+- ✅ Frontend desplegado (en Netlify, Vercel, etc.)
+- 📱 Bot de Telegram creado
+
+### Paso 1: Crear Bot de Telegram
+
+1. **Abrir Telegram** y buscar `@BotFather`
+2. **Enviar** `/newbot`
+3. **Seguir instrucciones** para crear tu bot
+4. **Guardar el token** que te proporciona BotFather
+
+### Paso 2: Configurar Mini App
+
+1. **Enviar a BotFather**: `/newapp`
+2. **Seleccionar tu bot** de la lista
+3. **Configurar la aplicación**:
+   - **Title**: `Boletín Oficial Argentina`
+   - **Description**: `Análisis inteligente del Boletín Oficial argentino`
+   - **Photo**: Subir un ícono (512x512 px recomendado)
+   - **Web App URL**: `https://tu-frontend.netlify.app` (tu URL de Netlify/vercel o hosting elegido)
+
+### Paso 3: Configurar Comandos del Bot
+
+Enviar a BotFather: `/setcommands`
+
+```
+start - Iniciar análisis del Boletín Oficial
+help - Ayuda y información
+analyze - Abrir Mini App para análisis
+```
+
+### Paso 4: Configurar Menu Button
+
+1. **Enviar a BotFather**: `/setmenubutton`
+2. **Seleccionar tu bot**
+3. **Configurar**:
+   - **Button text**: `📊 Analizar Boletín`
+   - **Web App URL**: `https://tu-frontend.netlify.app`
+
+### Paso 5: Configurar Descripción
+
+Enviar a BotFather: `/setdescription`
+
+```
+🇦🇷 Bot oficial para análisis inteligente del Boletín Oficial de la República Argentina.
+
+✨ Características:
+• Análisis automático con IA
+• Resumen de cambios normativos
+• Opiniones de expertos
+• Búsqueda por fecha
+• Interfaz intuitiva
+
+Desarrollado con AWS Lambda y Google Gemini AI.
+```
+
+### Paso 6: Configurar About Text
+
+Enviar a BotFather: `/setabouttext`
+
+```
+Análisis inteligente del Boletín Oficial argentino usando IA. Obtén resúmenes automáticos de cambios normativos, impacto estimado y opiniones de expertos.
+```
+
+### Paso 7: Probar la Mini App
+
+1. **Buscar tu bot** en Telegram
+2. **Enviar** `/start`
+3. **Hacer clic** en el botón "📊 Analizar Boletín"
+4. **Verificar** que se abra tu frontend correctamente
+
+### Configuración Avanzada (Opcional)
+
+#### Personalización de la Mini App
+
+En tu frontend, puedes detectar el tema de Telegram:
+
+```javascript
+// En tu app.js
+if (window.Telegram?.WebApp) {
+    const tg = window.Telegram.WebApp;
+    
+    // Aplicar tema de Telegram
+    document.documentElement.style.setProperty('--tg-theme-bg-color', tg.themeParams.bg_color);
+    document.documentElement.style.setProperty('--tg-theme-text-color', tg.themeParams.text_color);
+    
+    // Configurar botón principal
+    tg.MainButton.setText('Analizar Boletín');
+    tg.MainButton.show();
+}
+```
+
+#### Botones de Telegram
+
+```javascript
+// Configurar botones nativos de Telegram
+if (window.Telegram?.WebApp) {
+    const tg = window.Telegram.WebApp;
+    
+    // Botón principal
+    tg.MainButton.setText('🔍 Analizar');
+    tg.MainButton.onClick(() => {
+        handleAnalyze();
+    });
+    
+    // Botón de atrás
+    tg.BackButton.onClick(() => {
+        showDateSelector();
+    });
+}
+```
+
+### Troubleshooting
+
+#### Mini App no se abre
+
+1. **Verificar URL**: Debe ser HTTPS
+2. **Verificar certificado SSL**: Debe ser válido
+3. **Probar URL** directamente en navegador
+
+#### Errores de CORS
+
+1. **Verificar headers** en tu Lambda
+2. **Verificar configuración** de Netlify
+3. **Revisar logs** de CloudWatch
+
+### Recursos Útiles
+
+- [Telegram Bot API](https://core.telegram.org/bots/api)
+- [Telegram Mini Apps](https://core.telegram.org/bots/webapps)
+- [BotFather Commands](https://core.telegram.org/bots#botfather)
+- [Telegram Web App SDK](https://core.telegram.org/bots/webapps#initializing-mini-apps)
+
 ---
 
 ## 📄 Licencia
 
 Este proyecto está bajo la licencia MIT. Ver archivo `LICENSE` para más detalles.
 
-## 🤝 Contribuciones
-
-Las contribuciones son bienvenidas. Por favor:
-
-1. Fork el repositorio
-2. Crear branch para tu feature
-3. Commit tus cambios
-4. Push al branch
-5. Crear Pull Request
-
----
-
-**¡Gracias por usar Boletín Oficial Telegram App!** 🇦🇷

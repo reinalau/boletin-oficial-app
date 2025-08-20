@@ -139,7 +139,7 @@ if __name__ == "__main__":
     
     if success:
         print("\n✅ RESULTADO: El servicio simplificado funciona")
-        print("   El problema está en la versión compleja del MongoDBService")
+       
     else:
         print("\n❌ RESULTADO: Hay problemas básicos")
     

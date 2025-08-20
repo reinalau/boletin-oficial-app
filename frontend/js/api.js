@@ -2,8 +2,8 @@
 
 class APIClient {
   constructor() {
-    // URL base de la API - URL real de tu API Gateway
-    this.baseURL = 'https://xf4vwg8gq7.execute-api.us-east-1.amazonaws.com/v1';
+    // URL base de la API - Se configurará dinámicamente
+    this.baseURL = '';
     this.timeout = 120000; // 120 segundos (para análisis largos)
     this.retryAttempts = 2; // Reducido porque los análisis son largos
     this.retryDelay = 2000; // 2 segundos
@@ -17,15 +17,15 @@ class APIClient {
    */
   async analyzeDate(date, forceReanalysis = false) {
     console.log('🔍 APIClient.analyzeDate called with:', { date, forceReanalysis });
-    
+
     const payload = {
       fecha: date,
       forzar_reanalisis: forceReanalysis
     };
-    
+
     console.log('📤 Sending payload:', JSON.stringify(payload, null, 2));
-    
-    const response = await this.makeRequest('/analyze', {
+
+    const response = await this.makeRequest('', {
       method: 'POST',
       body: JSON.stringify(payload)
     });
@@ -43,7 +43,7 @@ class APIClient {
    */
   async getHealthStatus() {
     try {
-      const response = await this.makeRequest('/health', {
+      const response = await this.makeRequest('', {
         method: 'GET'
       });
       return response;
@@ -284,31 +284,58 @@ class APIError extends Error {
  */
 class APIConfig {
   static getConfig() {
-    // Detectar entorno
+    // Obtener URL de Lambda desde variable de entorno o usar fallback
+    const lambdaUrl = this.getLambdaUrl();
+
+    // Detectar entorno para configuraciones específicas
     const hostname = window.location.hostname;
 
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      // Desarrollo local - usar tu API Gateway real
+      // Desarrollo local
       return {
-        baseURL: 'https://xf4vwg8gq7.execute-api.us-east-1.amazonaws.com/v1',
+        baseURL: lambdaUrl,
         timeout: 120000, // 2 minutos para análisis largos
         retryAttempts: 2
       };
     } else if (hostname.includes('vercel.app') || hostname.includes('netlify.app')) {
-      // Staging/Preview - usar la misma API
+      // Staging/Preview
       return {
-        baseURL: 'https://xf4vwg8gq7.execute-api.us-east-1.amazonaws.com/v1',
+        baseURL: lambdaUrl,
         timeout: 120000,
         retryAttempts: 2
       };
     } else {
-      // Producción - usar la misma API
+      // Producción
       return {
-        baseURL: 'https://xf4vwg8gq7.execute-api.us-east-1.amazonaws.com/v1',
+        baseURL: lambdaUrl,
         timeout: 120000,
         retryAttempts: 2
       };
     }
+  }
+
+  /**
+   * Obtiene la URL de Lambda desde variables de entorno
+   * @returns {string} URL de Lambda Function
+   */
+  static getLambdaUrl() {
+    // 1. Variable de entorno de Netlify (inyectada en build time)
+    // Netlify reemplaza process.env.VARIABLE_NAME con el valor real durante el build
+    if (typeof process !== 'undefined' && process.env && process.env.LAMBDA_FUNCTION_URL) {
+      console.log('🔧 Using Lambda URL from Netlify env:...');
+      return process.env.LAMBDA_FUNCTION_URL;
+    }
+
+    // 2. Variable global definida en HTML (para casos especiales)
+    if (typeof window !== 'undefined' && window.LAMBDA_FUNCTION_URL) {
+      console.log('🔧 Using Lambda URL from window global: window.LAMBDA_FUNCTION_URL');
+      return window.LAMBDA_FUNCTION_URL;
+    }
+
+    // 3. Fallback a URL por defecto (desarrollo local)
+    const fallbackUrl = 'https://tuv37pjekt5e5emvtscqouv7jq0cyaiu.lambda-url.us-east-1.on.aws';
+    
+    return fallbackUrl;
   }
 
   static createClient() {

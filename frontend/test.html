@@ -108,7 +108,7 @@
         <h1>🇦🇷 Test API Boletín Oficial</h1>
         
         <div class="api-info">
-            <strong>API Endpoint:</strong> https://xf4vwg8gq7.execute-api.us-east-1.amazonaws.com/v1/analyze<br>
+            <strong>API Endpoint:</strong> https://w6scjpjua3bmj272d2dqhxy2ve0yrkpf.lambda-url.us-east-1.on.aws<br>
             <strong>Timeout:</strong> 120 segundos<br>
             <strong>Método:</strong> POST
         </div>
@@ -257,7 +257,7 @@ ${error.details ? JSON.stringify(error.details, null, 2) : 'No hay detalles adic
                 const startTime = Date.now();
                 
                 // Hacer una petición simple para probar conectividad
-                const response = await fetch('https://xf4vwg8gq7.execute-api.us-east-1.amazonaws.com/v1/analyze', {
+                const response = await fetch('https://w6scjpjua3bmj272d2dqhxy2ve0yrkpf.lambda-url.us-east-1.on.aws', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

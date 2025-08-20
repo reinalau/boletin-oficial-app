@@ -1,6 +1,6 @@
 // Script simple para probar la API desde Node.js o navegador
 
-const API_URL = 'https://xf4vwg8gq7.execute-api.us-east-1.amazonaws.com/v1/analyze';
+const API_URL = 'https://w6scjpjua3bmj272d2dqhxy2ve0yrkpf.lambda-url.us-east-1.on.aws';
 
 /**
  * Función para probar la API del Boletín Oficial

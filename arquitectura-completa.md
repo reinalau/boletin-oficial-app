@@ -18,10 +18,9 @@ graph TB
     
     %% API Layer
     subgraph "AWS Cloud"
-        AG[API Gateway<br/>REST API<br/>- CORS habilitado<br/>- Rate limiting<br/>- Authentication]
-        
         subgraph "AWS Lambda Function"
             LH[Lambda Handler<br/>lambda_function.py]
+            LFU[Lambda Function URL<br/>- Direct HTTPS endpoint<br/>- CORS configured<br/>- No API Gateway needed]
             
             subgraph "Services Layer"
                 PS[Web Access Service<br/>- Direct web access<br/>- Real-time content<br/>- No PDF download needed]
@@ -50,8 +49,8 @@ graph TB
     UI -->|Selecciona fecha| TMA
     
     %% API Communication
-    TMA -->|HTTP POST /analyze| AG
-    AG -->|Invoke| LH
+    TMA -->|HTTP POST| LFU
+    LFU -->|Direct invoke| LH
     
     %% Service Orchestration
     LH -->|Coordina servicios| PS
@@ -65,8 +64,8 @@ graph TB
     DB -->|Almacena/Recupera| MDB
     
     %% Response Flow
-    LH -->|JSON Response| AG
-    AG -->|HTTP Response| TMA
+    LH -->|JSON Response| LFU
+    LFU -->|HTTP Response| TMA
     TMA -->|Muestra resultados| UI
     UI -->|Compartir| TB
     
@@ -78,7 +77,7 @@ graph TB
     classDef telegram fill:#fff8e1
     
     class TMA,UI frontend
-    class AG,LH,PS,LLM,DB,EH aws
+    class LFU,LH,PS,LLM,DB,EH aws
     class BO,GM external
     class MDB database
     class TB,TU telegram
@@ -90,8 +89,8 @@ graph TB
 sequenceDiagram
     participant U as Usuario Telegram
     participant T as Telegram Mini App
-    participant A as API Gateway
     participant L as AWS Lambda
+    participant F as Lambda Function URL
     participant S as PDF Scraper
     participant B as Boletín Oficial
     participant M as LLM Service
@@ -102,13 +101,13 @@ sequenceDiagram
     T->>U: Muestra calendario
     U->>T: Selecciona fecha (ej: 2024-01-15)
     
-    T->>A: POST /analyze {"fecha": "2024-01-15"}
-    A->>L: Invoca Lambda Handler
+    T->>F: POST {"fecha": "2024-01-15"}
+    F->>L: Direct invocation
     
     L->>D: Verifica si existe análisis
     alt Análisis existe en cache
         D->>L: Retorna análisis existente
-        L->>A: Respuesta con análisis cacheado
+        L->>F: Respuesta con análisis cacheado
     else Análisis no existe
         L->>S: Solicita scraping de PDF
         S->>B: Busca PDF para fecha
@@ -129,10 +128,10 @@ sequenceDiagram
         
         L->>D: Guarda análisis completo
         D->>L: Confirmación de guardado
-        L->>A: Respuesta con nuevo análisis
+        L->>F: Respuesta con nuevo análisis
     end
     
-    A->>T: JSON con análisis y opiniones
+    F->>T: JSON con análisis y opiniones
     T->>U: Muestra análisis formateado
     U->>T: Comparte resultados (opcional)
     T->>U: Opciones de compartir en Telegram
@@ -171,8 +170,7 @@ sequenceDiagram
 ├── 📄 main.tf (Recursos principales)
 ├── 🔧 variables.tf (Variables)
 ├── 📤 outputs.tf (Outputs)
-├── 🔐 iam.tf (Roles y políticas)
-└── 🌐 api_gateway.tf (API Gateway)
+└── 🔐 iam.tf (Roles y políticas)
 ```
 
 ## Tecnologías por Componente
@@ -180,7 +178,7 @@ sequenceDiagram
 | Componente | Tecnologías | Propósito |
 |------------|-------------|-----------|
 | **Frontend** | HTML5, CSS3, JavaScript, Telegram Web App SDK | Interfaz de usuario en Telegram |
-| **API Gateway** | AWS API Gateway, REST API, CORS | Punto de entrada HTTP |
+| **Function URL** | AWS Lambda Function URL, HTTPS endpoint | Punto de entrada HTTP directo |
 | **Backend** | Python 3.11, AWS Lambda | Lógica de negocio serverless |
 | **Web Access** | Google Gemini Web Access | Acceso directo a contenido web |
 | **AI Analysis** | Google Generative AI, Gemini API | Análisis inteligente con acceso web |

@@ -188,7 +188,6 @@ AccessDenied: User: arn:aws:iam::123456789012:user/myuser is not authorized
 
 1. **Verificar permisos IAM**:
    - Lambda: `AWSLambdaFullAccess`
-   - API Gateway: `AmazonAPIGatewayAdministrator`
    - IAM: `IAMFullAccess`
    - CloudWatch: `CloudWatchFullAccess`
 
@@ -201,10 +200,8 @@ AccessDenied: User: arn:aws:iam::123456789012:user/myuser is not authorized
             "Effect": "Allow",
             "Action": [
                 "lambda:*",
-                "apigateway:*",
                 "iam:*",
-                "logs:*",
-                "secretsmanager:*"
+                "logs:*"
             ],
             "Resource": "*"
         }
@@ -407,11 +404,11 @@ lambda_memory_size = 2048  # Más memoria = más CPU
    - Optimizar queries a base de datos
    - Reducir llamadas a APIs externas
 
-### 3. Error: "API Gateway 502 Bad Gateway"
+### 3. Error: "Lambda Function URL CORS"
 
 **Síntomas**:
 ```
-{"message": "Internal server error"}
+Access to fetch at 'https://xxx.lambda-url.us-east-1.on.aws/' from origin 'https://myapp.com' has been blocked by CORS policy
 ```
 
 **Diagnóstico**:
@@ -422,20 +419,50 @@ aws logs tail /aws/lambda/boletin-oficial-analyzer --follow
 
 **Soluciones**:
 
-1. **Verificar formato de respuesta**:
+1. **Verificar configuración CORS en Terraform**:
+```hcl
+resource "aws_lambda_function_url" "boletin_analyzer_url" {
+  function_name      = aws_lambda_function.boletin_analyzer.function_name
+  authorization_type = "NONE"
+
+  cors {
+    allow_credentials = false
+    allow_origins     = ["*"]
+    allow_methods     = ["*"]
+    allow_headers     = ["*"]
+    max_age          = 86400
+  }
+}
+```
+
+2. **Verificar headers en Lambda**:
 ```python
-# Lambda debe retornar formato específico
+# Lambda debe retornar headers CORS
 return {
     'statusCode': 200,
-    'headers': {'Content-Type': 'application/json'},
+    'headers': {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+    },
     'body': json.dumps(response_data)
 }
 ```
 
-2. **Verificar permisos**:
-```bash
-# API Gateway debe poder invocar Lambda
-aws lambda get-policy --function-name boletin-oficial-analyzer
+3. **Manejar OPTIONS requests**:
+```python
+# En lambda_function.py
+if event.get('requestContext', {}).get('http', {}).get('method') == 'OPTIONS':
+    return {
+        'statusCode': 200,
+        'headers': {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+        },
+        'body': ''
+    }
 ```
 
 ## 🧪 Problemas de Testing
@@ -449,10 +476,10 @@ requests.exceptions.ConnectionError: Connection refused
 
 **Soluciones**:
 
-1. **Verificar URL de API**:
+1. **Verificar URL de Lambda Function**:
 ```bash
 # Obtener URL correcta
-terraform output api_gateway_url
+terraform output lambda_function_url
 ```
 
 2. **Verificar despliegue**:
@@ -463,7 +490,7 @@ aws lambda get-function --function-name boletin-oficial-analyzer
 
 3. **Test manual**:
 ```bash
-curl -X POST https://tu-api-url/v1/analyze -H "Content-Type: application/json" -d "{}"
+curl -X POST https://xxx.lambda-url.us-east-1.on.aws/ -H "Content-Type: application/json" -d '{"fecha":"2025-08-07","forzar_reanalisis":false}'
 ```
 
 ### 2. Error: "Test data not loading"
@@ -533,8 +560,8 @@ terraform show
 # Estado de Lambda
 aws lambda get-function --function-name boletin-oficial-analyzer
 
-# Estado de API Gateway
-aws apigateway get-rest-apis
+# Estado de Lambda Function URL
+aws lambda get-function-url-config --function-name boletin-oficial-analyzer
 
 # Logs recientes
 aws logs tail /aws/lambda/boletin-oficial-analyzer --since 1h
@@ -543,8 +570,8 @@ aws logs tail /aws/lambda/boletin-oficial-analyzer --since 1h
 ### Test de conectividad
 
 ```bash
-# Test de API Gateway
-curl -X OPTIONS https://tu-api-url/v1/analyze
+# Test de Lambda Function URL
+curl -X OPTIONS https://xxx.lambda-url.us-east-1.on.aws/
 
 # Test de Lambda directamente
 aws lambda invoke --function-name boletin-oficial-analyzer --payload '{}' response.json
@@ -647,8 +674,7 @@ terraform output
 
 - **Issues**: Crear issue en el repositorio
 - **Documentación**: Ver [README.md](README.md)
-- **API**: Ver [API_DOCUMENTATION.md](API_DOCUMENTATION.md)
 
 ---
 
-**Recuerda**: La mayoría de problemas se resuelven verificando credenciales, permisos y configuración. Siempre revisa los logs para obtener más información específica sobre el error.
+**Nota**: La mayoría de problemas se resuelven verificando credenciales, permisos y configuración. Siempre revisa los logs para obtener más información específica sobre el error.

@@ -34,13 +34,13 @@ variable "lambda_runtime" {
 variable "lambda_timeout" {
   description = "Timeout for Lambda function in seconds"
   type        = number
-  default     = 300
+  default     = 360
 }
 
 variable "lambda_memory_size" {
   description = "Memory size for Lambda function in MB"
   type        = number
-  default     = 1024
+  default     = 500
 }
 
 variable "lambda_zip_path" {
@@ -89,38 +89,19 @@ variable "langchain_model" {
 variable "langchain_temperature" {
   description = "Temperature setting for LangChain model"
   type        = string
-  default     = "1"
+  default     = "0"
 }
 
 variable "max_retry_attempts" {
   description = "Maximum retry attempts for operations"
   type        = string
-  default     = "3"
+  default     = "2"
 }
 
 variable "llm_request_timeout" {
   description = "Timeout for LLM requests in seconds"
   type        = string
-  default     = "120"
-}
-
-# API Gateway Configuration
-variable "api_gateway_name" {
-  description = "Name of the API Gateway"
-  type        = string
-  default     = "boletin-oficial-api"
-}
-
-variable "api_gateway_description" {
-  description = "Description of the API Gateway"
-  type        = string
-  default     = "API for Boletin Oficial Telegram App"
-}
-
-variable "api_gateway_stage_name" {
-  description = "Stage name for API Gateway deployment"
-  type        = string
-  default     = "v1"
+  default     = "360"
 }
 
 # Rate limiting configuration

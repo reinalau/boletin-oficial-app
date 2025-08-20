@@ -33,34 +33,20 @@ Deployment con Layers:
 
 **Construir Layer:**
 ```cmd
-build_layer.bat
+.\build_layer_docker.ps1
 ```
 - Crea `lambda_layer.zip` con todas las dependencias
 - Estructura compatible con Lambda Layers (`python/` directory)
 
 **Construir Función:**
 ```cmd
-build_lambda_only.bat
+.\build_lambda_only.bat
 ```
 - Crea `lambda_deployment.zip` solo con código de aplicación
 - No incluye dependencias (las obtiene del layer)
 
 ### 2. Deployment Completo
 
-**Deploy con Layer:**
-```cmd
-deploy_with_layer.bat
-```
-- Construye layer y función
-- Deploya infraestructura con Terraform
-- Configura la función para usar el layer
-
-**Destruir todo:**
-```cmd
-destroy_with_layer.bat
-```
-- Destruye infraestructura
-- Limpia archivos de build
 
 ## Configuración de Terraform
 
@@ -118,23 +104,17 @@ cd scripts/iac
 cp terraform.tfvars.example terraform.tfvars
 # Edita terraform.tfvars con tus valores
 ```
+**Deploy con Layer en AWS (Backend Lambda):**
+Se hace via terraform (corroborar todos los archivos necesarios)
 
-### 2. Deployment
 ```cmd
-# Desde la raíz del proyecto
-deploy_with_layer.bat
+cd scripts/iac
+terraform init
+terraform validate
+terraform plan -var-file="terraform.tfvars"
+terraform apply -target="aws_lambda_function.boletin_analyzer" -var-file="terraform.tfvars" -auto-approve
 ```
 
-### 3. Verificación
-- Verifica en AWS Console que el layer se creó
-- Confirma que la función Lambda usa el layer
-- Prueba la función con los payloads de test
-
-## Ventajas del Approach con Layers
-
-### Resolución de Conflictos
-- **Problema anterior:** `rsa 4.9.1` incompatible con AWS CLI
-- **Solución:** Layer usa `rsa 4.7.2` compatible
 
 ### Tamaños Optimizados
 - **Layer:** ~50MB (dependencias)
@@ -196,11 +176,3 @@ aws logs tail /aws/lambda/boletin-oficial-analyzer --follow
 aws lambda get-layer-version --layer-name boletin-oficial-dependencies --version-number 1
 ```
 
-## Próximos Pasos
-
-1. **Ejecutar deployment:** `deploy_with_layer.bat`
-2. **Probar función:** Usar payloads de test en AWS Console
-3. **Verificar logs:** Revisar CloudWatch logs
-4. **Optimizar:** Ajustar memory/timeout según necesidad
-
-¿Necesitas ayuda con algún paso específico?

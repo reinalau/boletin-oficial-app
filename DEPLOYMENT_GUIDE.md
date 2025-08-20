@@ -129,6 +129,8 @@ aws sts get-caller-identity
    - Hacer clic en la API key creada
    - En "API restrictions", seleccionar "Generative AI API"
 
+6. **El modelo capa gratuita de gemini actual es gemini-2.5-flash**
+
 #### 3.2 MongoDB Atlas Connection String
 
 1. **Crear Cuenta en MongoDB Atlas**:
@@ -179,13 +181,9 @@ environment = "prod"
 aws_region = "us-east-1"
 
 # CONFIGURACIÓN DE LAMBDA (ajustar según necesidades)
-lambda_memory_size = 1024  # MB
-lambda_timeout = 300       # segundos (5 minutos)
+lambda_memory_size = 500  # MB
+lambda_timeout = 360       # segundos (6 minutos)
 
-# CONFIGURACIÓN DE API GATEWAY
-api_gateway_name = "boletin-oficial-api"
-api_throttle_rate_limit = 100  # requests por segundo
-```
 
 #### 4.3 Validar Configuración
 

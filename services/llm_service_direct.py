@@ -7,6 +7,9 @@ Basado en geminiPrompt.py con fecha actual
 import os
 import json
 import logging
+import requests
+import time
+import base64
 from datetime import datetime
 from typing import Dict, Any, Optional
 from google import genai
@@ -38,6 +41,52 @@ class LLMAnalysisServiceDirect:
             logger.error(f"Error inicializando LLMAnalysisServiceDirect: {str(e)}")
             raise
     
+    def crear_sesion_pdf_anterior(self, fecha_boletin: str = None):
+        """Crea una nueva sesión con cookies frescas"""
+        session = requests.Session()
+    
+        # Visitar página principal para establecer sesión
+        session.get('https://www.boletinoficial.gob.ar/seccion/primera')
+        time.sleep(1)
+        fecha_obj = datetime.strptime(fecha_boletin, '%Y-%m-%d')
+        fecha_formateada= fecha_obj.strftime('%d-%m-%Y')
+
+        url1= f'https://www.boletinoficial.gob.ar/edicion/actualizar/{fecha_formateada}'
+        #sesion que setea la fecha para traer el pdf de una fecha determinada
+        response = session.get(url1)
+        
+        if response.status_code == 200:
+                url2 = "https://www.boletinoficial.gob.ar/pdf/download_section"
+                headers = {
+                        'Accept': 'application/json, text/javascript, */*; q=0.01',
+                        'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                        'Origin': 'https://www.boletinoficial.gob.ar',
+                        'Referer': 'https://www.boletinoficial.gob.ar/seccion/primera',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Sec-Fetch-Dest': 'empty',
+                        'Sec-Fetch-Mode': 'cors',
+                        'Sec-Fetch-Site': 'same-origin',
+                }
+                data = {
+                    'nombreSeccion': 'primera',
+                }
+
+                # Hacer petición POST con la sesión establecida
+                response = session.post(url2, data=data, headers=headers, timeout=30)
+
+                if response.status_code == 200:
+                    # La respuesta es JSON con el PDF en Base64
+                    json_data = response.json()
+                    pdf_base64 = json_data['pdfBase64']
+                    return pdf_base64
+                else:
+                    return self._create_error_response("No puedo obtener pdf anterior") 
+    
+        else:
+            return self._create_error_response("No puedo obtener sesion pdf anterior") 
+
+    
     def analyze_normativa(self, date: str = None) -> Dict[str, Any]:
         """
         Analiza el contenido normativo usando Gemini directamente
@@ -49,6 +98,7 @@ class LLMAnalysisServiceDirect:
         Returns:
             dict: Análisis estructurado de la normativa
         """
+        current_date = datetime.now().strftime('%d/%m/%Y')
         # Usa la fecha que ingresa como parametro
         param_date = date
         
@@ -63,14 +113,16 @@ class LLMAnalysisServiceDirect:
                 
                 # Configurar tools y thinking
                 tools = [
-                    types.Tool(googleSearch=types.GoogleSearch()
-                    )
+                    types.Tool(url_context=types.UrlContext()),
+                    types.Tool(googleSearch=types.GoogleSearch()),
                 ]
                 
                 generate_content_config = types.GenerateContentConfig(
-                    thinking_config=types.ThinkingConfig(
+                    temperature=0,
+                    thinking_config = types.ThinkingConfig(
                         thinking_budget=-1,
                     ),
+                    media_resolution="MEDIA_RESOLUTION_UNSPECIFIED",
                     tools=tools,
                 )
                 
@@ -155,6 +207,7 @@ class LLMAnalysisServiceDirect:
                 
                 generate_content_config = types.GenerateContentConfig(
                     tools=tools,
+                    temperature=0,
                 )
                 
                 # Realizar llamada a Gemini
@@ -195,64 +248,112 @@ class LLMAnalysisServiceDirect:
         return []
     
     def _create_analysis_contents(self,param_date) -> list:
-        """Crea el contenido para análisis usando el formato de geminiPrompt.py"""
+        """Crea el contenido para análisis en Gemini"""
+
+        current_date = datetime.now().strftime('%Y-%m-%d')
+
+        if current_date == param_date :
+               
+                prompt_text = f"""
+        Analiza los puntos mas importantes de el contenido de la Primera Sección del Boletín Oficial de la República Argentina - Sección 1 - Legislación y Avisos Oficiales para la Edición de fecha {param_date}
+
+        INSTRUCCIONES BUSQUEDA:
+        - Si la fecha {param_date} coincide con la fecha actual en la que se ejecuta este prompt, entonces: Accede a la información del Boletín Oficial de la Republica Argentina para la primera sección "Legislación y Avisos Oficiales" en: https://s3.arsat.com.ar/cdn-bo-001/pdf-del-dia/primera.pdf
+        Ignorar conflictos de fechas internas en el documento de la url ya que aqui se recopilan erratas y nuevas normativas publicadas con la nueva fecha {param_date}.
+
+        INSTRUCCIONES PARA EL ANÁLISIS REQUERIDO:
+        - Tomar la fuente seleccionada anteriormente para analizar y hacer el resumen ejecutivo de los cambios normativos relevantes como privatizaciones, área previsional, desregulaciones importantes (para la fecha indicada).
+        - Lista detallada de cambios principales: decretos, resoluciones, disposiciones, avisos oficiales, convenciones colectivas de trabajo y si se identifican cambio en leyes.
+        - Impacto estimado de los cambios.
+        - Áreas del derecho afectadas.
+
+        FORMATO DE RESPUESTA (JSON válido):
+        {{
+        "resumen": "Resumen ejecutivo de los cambios normativos encontrados para la fecha actual",
+        "cambios_principales": [
+        {{
+        "tipo": "decreto|resolución|ley|disposición",
+        "numero": "número del instrumento legal",
+        "rotulo": "Titulo exacto completo asociado al instrumento legal (Ejemplo: AGENCIA DE RECAUDACIÓN Y CONTROL ADUANERO. DIRECCIÓN REGIONAL SANTA FE. Disposición 44/2025)",
+        "titulo": "título o tema principal",
+        "descripcion": "descripción detallada del cambio",
+        "impacto": "alto|medio|bajo",
+        "justificacion_impacto": "explicación del nivel de impacto"
+        }}
+        ],
+        "impacto_estimado": "Análisis general del impacto de todos los cambios",
+        "areas_afectadas": ["tributario", "laboral", "comercial", "civil", "penal", "administrativo", "otros"]
+        }}
+
+        IMPORTANTE:
+        Responde ÚNICAMENTE con el JSON válido, sin texto adicional.
+        Asegúrate de que todas las áreas afectadas estén en minúsculas.
+        Responder en español..
+        """
+                contents = [
+                        types.Content(
+                            role="user",
+                            parts=[
+                                types.Part.from_text(text=prompt_text),
+                            ],
+                         ),
+                ]
         
-        #current_date = datetime.now().strftime('%d/%m/%Y')
+        else:
+                # si tiene que consultar edición anterior
+
+                #obtiene el pdf de la fecha
+                pdf_base64 = self.crear_sesion_pdf_anterior(param_date)
+
+                prompt_text = f"""
+        Analiza los puntos mas importantes de el contenido adjunto de la Primera Sección del Boletín Oficial de la República Argentina - Sección 1 - Legislación y Avisos Oficiales para la Edición adjunto de fecha {param_date}
         
-        prompt_text = f"""
-Analiza el contenido del Boletín Oficial de la República Argentina para la fecha {param_date} .
+        INSTRUCCIONES PARA EL ANÁLISIS REQUERIDO:
+        - Tomar la fuente adjunta  anteriormente para analizar y hacer el resumen ejecutivo de los cambios normativos relevantes como privatizaciones, área previsional, desregulaciones importantes (para la fecha indicada).
+        - Lista detallada de cambios principales: decretos, resoluciones, disposiciones, avisos oficiales, convenciones colectivas de trabajo y si se identifican cambio en leyes.
+        - Impacto estimado de los cambios.
+        - Áreas del derecho afectadas.
 
-INSTRUCCIONES:
-1-Accede a la información del Boletín Oficial desde: https://www.boletinoficial.gob.ar/ y selecciona en el calendario la edición del {param_date}.
-2-Busca específicamente la sección 1 "Legislación y Avisos Oficiales" para la fecha indicada.
-3-Identifica y analiza todos los cambios normativos publicados en esa fecha.
-4-Si no encuentras contenido para esa fecha exacta, busca la edición en el calendario la fecha hábil más cercana
-5-Si es fin de semana o feriado, busca la ediccion en el calendario del día hábil anterior.
+        FORMATO DE RESPUESTA (JSON válido):
+        {{
+        "resumen": "Resumen ejecutivo de los cambios normativos encontrados para la fecha actual",
+        "cambios_principales": [
+        {{
+        "tipo": "decreto|resolución|ley|disposición",
+        "numero": "número del instrumento legal",
+        "rotulo": "Titulo exacto completo asociado al instrumento legal (Ejemplo: AGENCIA DE RECAUDACIÓN Y CONTROL ADUANERO. DIRECCIÓN REGIONAL SANTA FE. Disposición 44/2025)",
+        "titulo": "título o tema principal",
+        "descripcion": "descripción detallada del cambio",
+        "impacto": "alto|medio|bajo",
+        "justificacion_impacto": "explicación del nivel de impacto"
+        }}
+        ],
+        "impacto_estimado": "Análisis general del impacto de todos los cambios",
+        "areas_afectadas": ["tributario", "laboral", "comercial", "civil", "penal", "administrativo", "otros"]
+        }}
 
-ANÁLISIS REQUERIDO:
+        IMPORTANTE:
+        Responde ÚNICAMENTE con el JSON válido, sin texto adicional.
+        Asegúrate de que todas las áreas afectadas estén en minúsculas.
+        Responder en español..
+        """
 
--Resumen ejecutivo de los cambios normativos
--Lista detallada de cambios principales (decretos, resoluciones, leyes)
--Impacto estimado de los cambios
--Áreas del derecho afectadas
-
-FORMATO DE RESPUESTA (JSON válido):
-{{
-"resumen": "Resumen ejecutivo de los cambios normativos encontrados para la fecha actual",
-"cambios_principales": [
-{{
-"tipo": "decreto|resolución|ley|disposición",
-"numero": "número del instrumento legal",
-"titulo": "título o tema principal",
-"descripcion": "descripción detallada del cambio",
-"impacto": "alto|medio|bajo",
-"justificacion_impacto": "explicación del nivel de impacto"
-}}
-],
-"impacto_estimado": "Análisis general del impacto de todos los cambios",
-"areas_afectadas": ["tributario", "laboral", "comercial", "civil", "penal", "administrativo", "otros"]
-}}
-
-IMPORTANTE:
-
-Responde ÚNICAMENTE con el JSON válido, sin texto adicional
-
-Asegúrate de que todas las áreas afectadas estén en minúsculas
-
-Fecha a analizar: {param_date}
-
-URL de referencia: https://www.boletinoficial.gob.ar/
-"""
+                contents = [
+                    types.Content(
+                        role="user",
+                        parts=[
+                            types.Part.from_bytes(
+                                mime_type="application/pdf",
+                                data=base64.b64decode(
+                                    pdf_base64
+                                ),
+                            ),
+                            types.Part.from_text(text=prompt_text),
+                        ],
+                    ),
+                ]
         
-        contents = [
-            types.Content(
-                role="user",
-                parts=[
-                    types.Part.from_text(text=prompt_text),
-                ],
-            ),
-        ]
-        
+        logger.info( contents)
         return contents
     
     def _create_expert_opinions_contents(self, fecha_boletin: str, normativa_summary: str, cambios_principales: list) -> list:
@@ -262,14 +363,14 @@ URL de referencia: https://www.boletinoficial.gob.ar/
         cambios_texto = ""
         if cambios_principales:
             cambios_texto = "\n".join([
-                f"- {cambio.get('tipo', 'N/A')}: {cambio.get('titulo', 'N/A')} - {cambio.get('descripcion', 'N/A')}"
+                f"- {cambio.get('tipo', 'N/A')} {cambio.get('numero', 'N/A')}: {cambio.get('titulo', 'N/A')} - {cambio.get('descripcion', 'N/A')}"
                 for cambio in cambios_principales[:5]  # Limitar a 5 cambios principales
             ])
         
         
         
         prompt_text = f"""
-Busca análisis del contenido del Boletín Oficial de la República Argentina para la fecha {fecha_boletin} en los principales portales de Argentina. 
+Buscar análisis del contenido del Boletín Oficial de la República Argentina para la fecha {fecha_boletin} en los principales portales de Argentina. 
 
 CONTEXTO DEL BOLETÍN:
 Resumen: {normativa_summary}
@@ -285,7 +386,8 @@ INSTRUCCIONES DE BÚSQUEDA:
    - Ámbito Financiero (ambito.com)
    - El Cronista (cronista.com)
    - Infobae (infobae.com)
-   - Portales jurídicos especializados
+   - BAE Negocios (baenegocios.com)
+   - Portales jurídicos especializados.
    - Sitios de análisis económico y legal
 
 2. No incluyas registros de la propia web del boletin oficial: https://www.boletinoficial.gob.ar/
@@ -397,6 +499,7 @@ IMPORTANTE:
                 validated_cambio = {
                     'tipo': cambio.get('tipo', 'otro'),
                     'numero': cambio.get('numero', 'No especificado'),
+                    'rotulo': cambio.get('rotulo','No especificado'),
                     'titulo': cambio.get('titulo', 'No especificado'),
                     'descripcion': cambio.get('descripcion', 'No especificado'),
                     'impacto': cambio.get('impacto', 'medio'),

@@ -382,6 +382,9 @@ settings.local.json
 *.dump
 *.sql.gz
 
+# Auxiliarres no necesarios
+NotaDeploy.txt
+
 # ============================================================================
 # ARCHIVOS PERMITIDOS (FORZAR INCLUSIÓN)
 # ============================================================================
@@ -392,12 +395,10 @@ settings.local.json
 !requirements.txt
 !lambda_function.py
 !README.md
-!API_DOCUMENTATION.md
 !DEPLOYMENT_GUIDE.md
 !TROUBLESHOOTING.md
-!build.bat
-!deploy.bat
-!destroy.bat
+!build_lambda_only.bat
+!build_layer_docker.ps1
 !test_api.py
 
 # ============================================================================

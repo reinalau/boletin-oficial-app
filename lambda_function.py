@@ -30,7 +30,7 @@ def lambda_handler(event, context):
     Punto de entrada principal de la Lambda function
     
     Args:
-        event: Evento HTTP de API Gateway
+        event: Evento HTTP de API Gateway o Lambda Function URL
         context: Contexto de ejecución de Lambda
         
     Returns:
@@ -46,8 +46,12 @@ def lambda_handler(event, context):
             'remaining_time_ms': context.get_remaining_time_in_millis()
         })
         
-        # Parse HTTP event from API Gateway
+        # Parse HTTP event from API Gateway or Lambda Function URL
         parsed_request = parse_api_gateway_event(event)
+        
+        # Handle OPTIONS request for CORS preflight
+        if parsed_request['method'] == 'OPTIONS':
+            return format_options_response()
         
         # Validate input parameters
         validated_params = validate_request_parameters(parsed_request)
@@ -86,10 +90,10 @@ def lambda_handler(event, context):
 
 def parse_api_gateway_event(event: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Parse HTTP event from API Gateway
+    Parse HTTP event from API Gateway or Lambda Function URL
     
     Args:
-        event: API Gateway event
+        event: API Gateway or Lambda Function URL event
         
     Returns:
         dict: Parsed request data
@@ -98,8 +102,19 @@ def parse_api_gateway_event(event: Dict[str, Any]) -> Dict[str, Any]:
         ValueError: If event format is invalid
     """
     try:
-        # Extract HTTP method
-        http_method = event.get('httpMethod', '').upper()
+        # Detect event type and extract HTTP method
+        if 'httpMethod' in event:
+            # API Gateway event format
+            http_method = event.get('httpMethod', '').upper()
+            event_type = 'api_gateway'
+        elif 'requestContext' in event and 'http' in event.get('requestContext', {}):
+            # Lambda Function URL event format
+            http_method = event.get('requestContext', {}).get('http', {}).get('method', '').upper()
+            event_type = 'function_url'
+        else:
+            # Try to infer from available fields
+            http_method = 'POST'  # Default assumption
+            event_type = 'unknown'
         
         # Extract request body
         body = event.get('body', '{}')
@@ -111,8 +126,11 @@ def parse_api_gateway_event(event: Dict[str, Any]) -> Dict[str, Any]:
         else:
             body_data = body or {}
         
-        # Extract query parameters
-        query_params = event.get('queryStringParameters') or {}
+        # Extract query parameters (different format for Function URL)
+        if event_type == 'function_url':
+            query_params = event.get('queryStringParameters') or {}
+        else:
+            query_params = event.get('queryStringParameters') or {}
         
         # Extract path parameters
         path_params = event.get('pathParameters') or {}
@@ -120,31 +138,39 @@ def parse_api_gateway_event(event: Dict[str, Any]) -> Dict[str, Any]:
         # Extract headers
         headers = event.get('headers') or {}
         
+        # Extract source IP (different paths for different event types)
+        if event_type == 'function_url':
+            source_ip = event.get('requestContext', {}).get('http', {}).get('sourceIp')
+        else:
+            source_ip = event.get('requestContext', {}).get('identity', {}).get('sourceIp')
+        
         parsed_request = {
             'method': http_method,
             'body': body_data,
             'query_params': query_params,
             'path_params': path_params,
             'headers': headers,
-            'source_ip': event.get('requestContext', {}).get('identity', {}).get('sourceIp'),
-            'user_agent': headers.get('User-Agent', '')
+            'source_ip': source_ip,
+            'user_agent': headers.get('User-Agent', ''),
+            'event_type': event_type
         }
         
-        error_handler.log_info('api_gateway_event_parsed', {
+        error_handler.log_info('http_event_parsed', {
+            'event_type': event_type,
             'method': http_method,
             'has_body': bool(body_data),
             'query_params_count': len(query_params),
-            'source_ip': parsed_request['source_ip']
+            'source_ip': source_ip
         })
         
         return parsed_request
         
     except Exception as e:
         error_handler.log_error(ErrorCode.VALIDATION_ERROR, e, {
-            'action': 'parse_api_gateway_event',
+            'action': 'parse_http_event',
             'event_keys': list(event.keys()) if isinstance(event, dict) else 'invalid_event'
         })
-        raise ValueError(f"Error parsing API Gateway event: {str(e)}")
+        raise ValueError(f"Error parsing HTTP event: {str(e)}")
 
 
 def validate_request_parameters(request: Dict[str, Any]) -> Dict[str, Any]:
@@ -161,6 +187,19 @@ def validate_request_parameters(request: Dict[str, Any]) -> Dict[str, Any]:
         ValueError: If parameters are invalid
     """
     try:
+        # Handle OPTIONS method for CORS preflight
+        if request['method'] == 'OPTIONS':
+            return {
+                'method': 'OPTIONS',
+                'body': {},
+                'query_params': {},
+                'path_params': {},
+                'headers': {},
+                'source_ip': request.get('source_ip'),
+                'user_agent': '',
+                'event_type': request.get('event_type', 'unknown')
+            }
+        
         # Only support POST method for analysis requests
         if request['method'] != 'POST':
             raise ValueError(f"Method {request['method']} not allowed. Only POST is supported.")
@@ -278,7 +317,16 @@ def process_analysis_request(params: Dict[str, Any], context) -> Dict[str, Any]:
         # Step 1: Analyze normativa with LLM using direct URL access (simplified)
         analysis_result = analyze_normativa_with_llm(fecha, context)
         
-        # Step 4: Get expert opinions
+        # Check if analysis failed - if so, don't continue with expert opinions or save to DB
+        if analysis_result.get('error', False):
+            error_handler.log_error(ErrorCode.LLM_API_ERROR, Exception(analysis_result.get('error_message', 'Unknown error')), {
+                'fecha': fecha,
+                'action': 'analyze_normativa_failed'
+            })
+            # Return error response without saving to database
+            return analysis_result
+        
+        # Step 4: Get expert opinions (only if analysis was successful)
         expert_opinions = get_expert_opinions(analysis_result, context, fecha)
         
         # Step 3: Prepare complete analysis data
@@ -286,7 +334,7 @@ def process_analysis_request(params: Dict[str, Any], context) -> Dict[str, Any]:
             fecha, analysis_result, expert_opinions
         )
         
-        # Step 6: Save analysis to database
+        # Step 6: Save analysis to database (only if analysis was successful)
         save_analysis_to_database(complete_analysis, context)
         
         # Add metadata
@@ -490,6 +538,26 @@ def save_analysis_to_database(analysis_data: Dict[str, Any], context) -> str:
         return ''
 
 
+def format_options_response() -> Dict[str, Any]:
+    """
+    Format CORS preflight OPTIONS response
+    
+    Returns:
+        dict: HTTP OPTIONS response
+    """
+    return {
+        'statusCode': 200,
+        'headers': {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept',
+            'Access-Control-Max-Age': '86400',
+            'Content-Type': 'application/json'
+        },
+        'body': ''
+    }
+
+
 def format_success_response(result: Dict[str, Any], processing_time: float) -> Dict[str, Any]:
     """
     Format successful HTTP response
@@ -510,8 +578,8 @@ def format_success_response(result: Dict[str, Any], processing_time: float) -> D
         'headers': {
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+            'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept'
         },
         'body': json.dumps({
             'success': True,
@@ -575,8 +643,8 @@ def handle_lambda_error(error: Exception, event: Dict[str, Any],
         'headers': {
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'POST, OPTIONS',
-            'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+            'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept'
         },
         'body': json.dumps({
             'success': False,
