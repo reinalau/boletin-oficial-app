@@ -105,7 +105,7 @@ mongodb_collection = "boletin-oficial"
 
 # Configuración de Lambda
 lambda_function_name = "boletin-oficial-analyzer"
-lambda_memory_size   = 500
+lambda_memory_size   = 256
 lambda_timeout       = 360
 
 # Configuración opcional
