@@ -157,8 +157,8 @@ Una vez completado el despliegue, verás información similar a:
 🎉 Deployment completed successfully!
 
 📋 Important information:
-  📡 Lambda Function URL: https://w6scjpjua3bmj272d2dqhxy2ve0yrkpf.lambda-url.us-east-1.on.aws/
-  🔍 Direct HTTPS Endpoint: https://w6scjpjua3bmj272d2dqhxy2ve0yrkpf.lambda-url.us-east-1.on.aws/
+  📡 Lambda Function URL: https://w6scjpjua3bmj272d2dqhxy2ve000000.lambda-url.us-east-1.on.aws/
+  🔍 Direct HTTPS Endpoint: https://w6scjpjua3bmj272d2dqhxy2ve000000.lambda-url.us-east-1.on.aws/
 
 ⚠️  Next steps:
   1. Test your API using the test script: python test_api.py
@@ -184,10 +184,10 @@ python test_api.py https://xxxxxxxxxxx.lambda-url.us-east-1.on.aws/
 | `mongodb_connection_string` | String de conexión MongoDB Atlas | ✅ Sí | - |
 | `mongodb_database` | Nombre de la base de datos | No | `BoletinOficial` |
 | `mongodb_collection` | Nombre de la colección | No | `boletin-oficial` |
-| `lambda_memory_size` | Memoria Lambda (MB) | No | `1024` |
-| `lambda_timeout` | Timeout Lambda (segundos) | No | `300` |
+| `lambda_memory_size` | Memoria Lambda (MB) | No | `256` |
+| `lambda_timeout` | Timeout Lambda (segundos) | No | `360` |
 | `langchain_model` | Modelo Gemini a usar | No | `gemini-2.5-flash` |
-| `langchain_temperature` | Temperatura del modelo | No | `1` |
+| `langchain_temperature` | Temperatura del modelo | No | `0` |
 
 ### Configuración avanzada
 
@@ -253,6 +253,7 @@ POST https://[function-url].lambda-url.[region].on.aws/
         {
           "tipo": "decreto",
           "numero": "123/2024",
+          "rotulo": "PODER EJECUTIVO. Decreto 123/2024. DECTO-2025-592-APN-PTE - Decreto N° 186/2022. Modificación.",
           "titulo": "Modificación de...",
           "descripcion": "Descripción del cambio",
           "impacto": "alto"
@@ -307,21 +308,21 @@ POST https://[function-url].lambda-url.[region].on.aws/
 
 **Análisis de fecha específica:**
 ```bash
-curl -X POST https://w6scjpjua3bmj272d2dqhxy2ve0yrkpf.lambda-url.us-east-1.on.aws/ \
+curl -X POST https://w6scjpjua3bmj272d2dqhxy2ve000000.lambda-url.us-east-1.on.aws/ \
   -H "Content-Type: application/json" \
   -d '{"fecha": "2024-01-15"}'
 ```
 
 **Forzar nuevo análisis:**
 ```bash
-curl -X POST https://w6scjpjua3bmj272d2dqhxy2ve0yrkpf.lambda-url.us-east-1.on.aws/ \
+curl -X POST https://w6scjpjua3bmj272d2dqhxy2ve000000.lambda-url.us-east-1.on.aws/ \
   -H "Content-Type: application/json" \
   -d '{"fecha": "2024-01-15", "forzar_reanalisis": true}'
 ```
 
 **Análisis de fecha actual:**
 ```bash
-curl -X POST https://w6scjpjua3bmj272d2dqhxy2ve0yrkpf.lambda-url.us-east-1.on.aws/ \
+curl -X POST https://w6scjpjua3bmj272d2dqhxy2ve000000.lambda-url.us-east-1.on.aws/ \
   -H "Content-Type: application/json" \
   -d '{"fecha": "2025-08-07"}'
 ```
@@ -334,16 +335,16 @@ El proyecto incluye un script de pruebas completo:
 
 ```bash
 # Ejecutar todas las pruebas
-python test_api.py https://w6scjpjua3bmj272d2dqhxy2ve0yrkpf.lambda-url.us-east-1.on.aws/
+python test_api.py https://w6scjpjua3bmj272d2dqhxy2ve000000.lambda-url.us-east-1.on.aws/
 
 # Ejecutar con datos de prueba
-python test_api.py https://w6scjpjua3bmj272d2dqhxy2ve0yrkpf.lambda-url.us-east-1.on.aws/ --load-test-data
+python test_api.py https://w6scjpjua3bmj272d2dqhxy2ve000000.lambda-url.us-east-1.on.aws/ --load-test-data
 
 # Ejecutar prueba específica
-python test_api.py https://w6scjpjua3bmj272d2dqhxy2ve0yrkpf.lambda-url.us-east-1.on.aws/ --single-test health
+python test_api.py https://w6scjpjua3bmj272d2dqhxy2ve000000.lambda-url.us-east-1.on.aws/ --single-test health
 
 # Con timeout personalizado
-python test_api.py https://w6scjpjua3bmj272d2dqhxy2ve0yrkpf.lambda-url.us-east-1.on.aws/ --timeout 120
+python test_api.py https://w6scjpjua3bmj272d2dqhxy2ve000000.lambda-url.us-east-1.on.aws/ --timeout 120
 ```
 
 ### Tipos de pruebas incluidas
