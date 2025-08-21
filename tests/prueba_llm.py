@@ -97,7 +97,8 @@ prompt_text = f"""
 
 
 client = genai.Client(
-        api_key="AIzaSyD3aqlgDVOxwmFdjk8pyWpWJ7gnzLko2hI",
+    #Obtener apikey de google gemini
+        api_key="Axxxxxxxxxxx",
     )
 
 model = "gemini-2.5-flash"

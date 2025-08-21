@@ -13,7 +13,10 @@ Se requiere una aplicación sencilla que analice, en principio, la primera secci
 ##Requerimientos No Funcionales
 1-Backend : 
 a) El backend debe codificarse en Python. Encapsulado en una aws lambda que tiene utiliza un framework LangChase para poder invocar un LLM y asi realizar el analisis.
-b) La información se obtiene por pdf buscando la fecha que recibe como parametro Lambda en la web https://otslist.boletinoficial.gob.ar/ots/
+b) La información se obtiene por pdf buscando, 
+   si la fecha es la actual:
+    https://s3.arsat.com.ar/cdn-bo-001/pdf-del-dia/primera.pdf
+   si la fecha no es la actual el pdf analizar si obtiene de la API seteando la sesion: https://www.boletinoficial.gob.ar/seccion/primera 
 b)La base de datos donde se guardan los analisis y opiniones de expertos (por fecha y seccion) es un BD NoSQL-MongoDb que va a ser creada la coleccion. Se debe diseñar el json que se guardará en ella.
 
 

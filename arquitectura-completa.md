@@ -91,7 +91,7 @@ sequenceDiagram
     participant T as Telegram Mini App
     participant L as AWS Lambda
     participant F as Lambda Function URL
-    participant S as PDF Scraper
+    participant S as PDF API BORA
     participant B as Boletín Oficial
     participant M as LLM Service
     participant G as Gemini API
@@ -109,7 +109,7 @@ sequenceDiagram
         D->>L: Retorna análisis existente
         L->>F: Respuesta con análisis cacheado
     else Análisis no existe
-        L->>S: Solicita scraping de PDF
+        L->>S: Solicita PDF en la API BORA
         S->>B: Busca PDF para fecha
         B->>S: Retorna URL del PDF
         S->>B: Descarga PDF
@@ -154,8 +154,7 @@ sequenceDiagram
 🚀 AWS Lambda Function
 ├── 📝 lambda_function.py (Handler principal)
 ├── 🔧 services/
-│   ├── pdf_scraper.py (Scraping y PDF)
-│   ├── llm_service.py (Direct Gemini + Web Access)
+│   ├── llm_service_direct.py (Direct Gemini + Web Access)
 │   ├── database_service.py (MongoDB)
 │   └── config_service.py (Configuración)
 ├── 🛠️ utils/

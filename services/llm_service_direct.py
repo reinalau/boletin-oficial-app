@@ -31,7 +31,8 @@ class LLMAnalysisServiceDirect:
             
             # Inicializar cliente Gemini
             self.client = genai.Client(api_key=api_key)
-            
+
+             
             # Configurar modelo desde variables de entorno
             self.model_name = os.getenv('LANGCHAIN_MODEL', 'gemini-2.5-flash')
             
@@ -108,17 +109,19 @@ class LLMAnalysisServiceDirect:
             try:
                 logger.info(f"Iniciando análisis de normativa para la fecha {param_date}, intento {attempt + 1}")
                 
+               
                 # Crear contenido usando el formato de geminiPrompt.py
                 contents = self._create_analysis_contents(param_date)
                 
                 # Configurar tools y thinking
+                tool_config = {"force_refresh": True}
                 tools = [
                     types.Tool(url_context=types.UrlContext()),
                     types.Tool(googleSearch=types.GoogleSearch()),
                 ]
                 
                 generate_content_config = types.GenerateContentConfig(
-                    temperature=0,
+                    temperature=int(os.getenv('LANGCHAIN_TEMPERATURE', '0')),
                     thinking_config = types.ThinkingConfig(
                         thinking_budget=-1,
                     ),
@@ -138,6 +141,9 @@ class LLMAnalysisServiceDirect:
                 ):
                     if chunk.text:
                         response_text += chunk.text
+                
+                #Borrar Cache de contexto pendiente
+                
                 
                 if not response_text:
                     raise Exception("Respuesta vacía de Gemini")
@@ -253,13 +259,13 @@ class LLMAnalysisServiceDirect:
         current_date = datetime.now().strftime('%Y-%m-%d')
 
         if current_date == param_date :
-               
+                logger.info("consulta dia actual")   
                 prompt_text = f"""
         Analiza los puntos mas importantes de el contenido de la Primera Sección del Boletín Oficial de la República Argentina - Sección 1 - Legislación y Avisos Oficiales para la Edición de fecha {param_date}
 
         INSTRUCCIONES BUSQUEDA:
-        - Si la fecha {param_date} coincide con la fecha actual en la que se ejecuta este prompt, entonces: Accede a la información del Boletín Oficial de la Republica Argentina para la primera sección "Legislación y Avisos Oficiales" en: https://s3.arsat.com.ar/cdn-bo-001/pdf-del-dia/primera.pdf
-        Ignorar conflictos de fechas internas en el documento de la url ya que aqui se recopilan erratas y nuevas normativas publicadas con la nueva fecha {param_date}.
+        - Accede nuevamente a la url que contiene la información del Boletín Oficial de la Republica Argentina para la primera sección "Legislación y Avisos Oficiales" en: https://s3.arsat.com.ar/cdn-bo-001/pdf-del-dia/primera.pdf
+        -Ignorar conflictos de fechas internas en el documento de la url ya que aqui se recopilan erratas y nuevas normativas publicadas con la nueva fecha {param_date}.
 
         INSTRUCCIONES PARA EL ANÁLISIS REQUERIDO:
         - Tomar la fuente seleccionada anteriormente para analizar y hacer el resumen ejecutivo de los cambios normativos relevantes como privatizaciones, área previsional, desregulaciones importantes (para la fecha indicada).
@@ -288,6 +294,7 @@ class LLMAnalysisServiceDirect:
         IMPORTANTE:
         Responde ÚNICAMENTE con el JSON válido, sin texto adicional.
         Asegúrate de que todas las áreas afectadas estén en minúsculas.
+        Utilizar y acceder nuevamente a la url que contiene la información para analizar: https://s3.arsat.com.ar/cdn-bo-001/pdf-del-dia/primera.pdf
         Responder en español..
         """
                 contents = [
@@ -301,7 +308,7 @@ class LLMAnalysisServiceDirect:
         
         else:
                 # si tiene que consultar edición anterior
-
+                logger.info("consulta dias anteriores")
                 #obtiene el pdf de la fecha
                 pdf_base64 = self.crear_sesion_pdf_anterior(param_date)
 
@@ -379,7 +386,7 @@ Principales cambios identificados:
 {cambios_texto}
 
 INSTRUCCIONES DE BÚSQUEDA:
-1. Busca en portales argentinos como:
+1. Busca en portales argentinos como los del siguiente listado para la fecha {fecha_boletin} :
    - La Nación (lanacion.com.ar)
    - Clarín (clarin.com)
    - Página/12 (pagina12.com.ar)
@@ -390,9 +397,11 @@ INSTRUCCIONES DE BÚSQUEDA:
    - Portales jurídicos especializados.
    - Sitios de análisis económico y legal
 
-2. No incluyas registros de la propia web del boletin oficial: https://www.boletinoficial.gob.ar/
+2. 
+ -No incluyas busquedas de: https://www.boletinoficial.gob.ar/ y https://boa.com.ar/
+ -No incluyas busquedas de publicaciones con fechas anteriores a {fecha_boletin} .   
 
-3. Busca específicamente análisis, opiniones o comentarios sobre:
+3. Busca específicamente análisis, opiniones o comentarios para la fecha {fecha_boletin} sobre:
    - Los cambios normativos del {fecha_boletin}
    - Impacto de las nuevas regulaciones
    - Opiniones de expertos legales o económicos
@@ -415,7 +424,6 @@ FORMATO DE RESPUESTA (JSON válido):
 
 IMPORTANTE:
 - Responde ÚNICAMENTE con el JSON válido, sin texto adicional
-- Si no encuentras análisis específicos para esa fecha, busca análisis generales sobre temas similares
 - Incluye máximo 10 opiniones
 - Prioriza fuentes confiables y reconocidas
 - Si no encuentras información, retorna un array vacío []

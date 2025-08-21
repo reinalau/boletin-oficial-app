@@ -2,7 +2,7 @@
 
 ## Visión General
 
-La aplicación AppBoletinOficial consiste en un backend serverless implementado en AWS Lambda que procesa automáticamente el Boletín Oficial de Argentina, extrae normativa de la sección "Legislación y Avisos Oficiales", y utiliza inteligencia artificial para generar análisis detallados. El sistema está diseñado para ser escalable, eficiente y fácil de mantener.
+La aplicación AppBoletinOficial consiste en un backend serverless implementado en AWS Lambda que procesa automáticamente el Boletín Oficial de Argentina, extrae normativa de url y apis publicas para la sección "Legislación y Avisos Oficiales", y utiliza inteligencia artificial para generar análisis detallados. El sistema está diseñado para ser escalable, eficiente y fácil de mantener.
 
 ## Arquitectura
 
@@ -10,20 +10,16 @@ La aplicación AppBoletinOficial consiste en un backend serverless implementado 
 
 ```mermaid
 graph TB
-    A[Telegram Mini App] --> B[API Gateway]
-    B --> C[AWS Lambda Handler]
-    C --> D[PDF Scraper Service]
-    C --> E[LangChain LLM Service]
-    C --> F[MongoDB Service]
-    D --> G[Boletín Oficial Website]
-    E --> H[Google Gemini API]
-    F --> I[MongoDB Atlas]
+    A[Telegram Mini App] --> B[AWS Lambda Handler]
+    B --> C[Google Gemini API]
+    B --> E[MongoDB Service]
+    C --> D[APi Boletín Oficial Website]
     
+        
     subgraph "AWS Lambda Function"
         C
-        D
         E
-        F
+        E
         J[Error Handler]
         K[Response Formatter]
     end
@@ -60,36 +56,20 @@ def lambda_handler(event, context):
 ```
 
 **Responsabilidades**:
-- Parsear requests HTTP de API Gateway
+- Parsear requests HTTP de AWS Lambda
 - Validar parámetros de entrada
 - Coordinar servicios
 - Formatear respuestas HTTP
 - Manejo de errores global
 
-### 2. PDF Scraper Service
+### 2. Busqueda de URL de pdf 
 
-**Archivo**: `services/pdf_scraper.py`
 
-```python
-class BoletinScraperService:
-    def get_boletin_pdf_url(self, date: str) -> str:
-        """Obtiene la URL del PDF para una fecha específica"""
-        
-    def download_pdf(self, pdf_url: str) -> bytes:
-        """Descarga el PDF del boletín oficial"""
-        
-    def extract_seccion_legislacion(self, pdf_content: bytes) -> str:
-        """Extrae el texto de la sección Legislación y Avisos Oficiales"""
-```
 
-**Dependencias**:
-- `requests`: Para HTTP requests
-- `PyPDF2` o `pdfplumber`: Para extracción de texto de PDFs
-- `beautifulsoup4`: Para parsing HTML del sitio web
 
-### 3. LangChain LLM Service
+### 3. Llamada LLM Service Gemini
 
-**Archivo**: `services/llm_service.py`
+**Archivo**: `services/llm_service_direct.py`
 
 ```python
 class LLMAnalysisService:
@@ -113,7 +93,7 @@ class LLMAnalysisService:
         """Genera opiniones de expertos simuladas o busca opiniones reales"""
 ```
 
-**Configuración LangChain**:
+**Configuración Llamada LLM Service Gemini**:
 - Modelo: Google Gemini (capa gratuita)
 - Prompts estructurados para análisis legal
 - Chain para procesamiento secuencial
@@ -176,6 +156,7 @@ class ErrorHandler:
       {
         "tipo": "decreto",
         "numero": "123/2024",
+        "rotulo": "MINISTERIO DE CAPITAL HUMANO. DIRECCIÓN NACIONAL DE RELACIONES Y REGULACIONES DEL TRABAJO. Disposición 1088/2025. DI-2025-1088-APN-DNRYRT#MCH"
         "titulo": "Modificación de...",
         "descripcion": "Descripción del cambio",
         "impacto": "alto|medio|bajo"
@@ -239,24 +220,13 @@ class ErrorHandler:
 
 ### Estrategia de Reintentos
 
-1. **PDF Download Failures**: 3 reintentos con backoff exponencial
-2. **LLM API Failures**: 2 reintentos con delay fijo
-3. **Database Failures**: 3 reintentos con backoff exponencial
+1. **LLM API Failures**: 2 reintentos con delay fijo
+2. **Database Failures**: 3 reintentos con backoff exponencial
 
 ### Tipos de Error y Responses
 
 ```python
 ERROR_CODES = {
-    'PDF_NOT_FOUND': {
-        'code': 'PDF_001',
-        'message': 'No se encontró PDF para la fecha especificada',
-        'http_status': 404
-    },
-    'PDF_PROCESSING_ERROR': {
-        'code': 'PDF_002', 
-        'message': 'Error procesando el contenido del PDF',
-        'http_status': 500
-    },
     'LLM_API_ERROR': {
         'code': 'LLM_001',
         'message': 'Error en el servicio de análisis de IA',
@@ -274,45 +244,16 @@ ERROR_CODES = {
 
 ### Unit Tests
 
-**Archivo**: `tests/test_services.py`
+Revisar directorio tests. Lo ideal es probar backend separado y luego frontend 
 
-```python
-class TestBoletinScraperService:
-    def test_get_pdf_url_valid_date(self):
-        """Test obtención de URL con fecha válida"""
-        
-    def test_extract_seccion_legislacion(self):
-        """Test extracción de texto de PDF"""
-
-class TestLLMAnalysisService:
-    def test_analyze_normativa_with_mock_llm(self):
-        """Test análisis con LLM mockeado"""
-        
-class TestMongoDBService:
-    def test_save_and_retrieve_analysis(self):
-        """Test guardado y recuperación de análisis"""
-```
-
-### Integration Tests
-
-**Archivo**: `tests/test_integration.py`
-
-```python
-class TestLambdaIntegration:
-    def test_full_analysis_flow(self):
-        """Test del flujo completo de análisis"""
-        
-    def test_cached_analysis_retrieval(self):
-        """Test recuperación de análisis cacheado"""
-```
 
 ### Performance Tests
 
-- Tiempo de respuesta < 30 segundos (requerimiento)
-- Memory usage < 1GB (límite Lambda)
-- Concurrent requests handling
+...
 
 ## Configuración y Despliegue
+
+Ver Readme.md Principal y TROUBLESHOOTING.md
 
 ### Variables de Entorno
 
@@ -320,7 +261,7 @@ class TestLambdaIntegration:
 # LLM Configuration
 GOOGLE_API_KEY=your-gemini-api-key
 LANGCHAIN_MODEL=gemini-2.5-pro
-LANGCHAIN_TEMPERATURE=1
+LANGCHAIN_TEMPERATURE=0
 
 # MongoDB Configuration  
 MONGODB_CONNECTION_STRING=mongodb+srv://[username]:[password]@cluster0.8koognb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
@@ -329,8 +270,7 @@ MONGODB_COLLECTION=boletin-oficial
 
 # Application Configuration
 MAX_RETRY_ATTEMPTS=3
-PDF_DOWNLOAD_TIMEOUT=30
-LLM_REQUEST_TIMEOUT=60
+LLM_REQUEST_TIMEOUT=360
 ```
 
 ### Dependencias (requirements.txt)
@@ -350,7 +290,7 @@ python-dateutil==2.8.2
 
 ```yaml
 Runtime: python3.11
-Memory: 1024 MB
+Memory: 500 MB 
 Timeout: 300 seconds (5 minutos)
 Environment Variables: [configuradas arriba]
 IAM Role: LambdaExecutionRole con permisos básicos
@@ -371,8 +311,7 @@ Rate Limiting: 100 requests/minute por IP
 ### Caching Strategy
 
 1. **Database Caching**: Análisis previos se almacenan y reutilizan
-2. **PDF Caching**: PDFs descargados se pueden cachear temporalmente
-3. **LLM Response Caching**: Respuestas similares se pueden cachear
+2. **LLM Response Caching**: Respuestas similares se pueden cachear
 
 ### Memory Management
 
@@ -388,7 +327,7 @@ Rate Limiting: 100 requests/minute por IP
 
 ## Seguridad
 
-### API Security
+### API Security (pendiente-esconder las variables de seguridad)
 
 1. **API Key Authentication**: Para acceso a la Lambda
 2. **Rate Limiting**: Prevenir abuso
@@ -413,10 +352,9 @@ Rate Limiting: 100 requests/minute por IP
 
 ### Custom Metrics
 
-1. **PDF Processing Time**: Tiempo de descarga y procesamiento
-2. **LLM Response Time**: Tiempo de respuesta del LLM
-3. **Database Query Time**: Tiempo de queries a MongoDB
-4. **Cache Hit Rate**: Tasa de aciertos de cache
+1. **LLM Response Time**: Tiempo de respuesta del LLM
+2. **Database Query Time**: Tiempo de queries a MongoDB
+3. **Cache Hit Rate**: Tasa de aciertos de cache
 
 ### Structured Logging
 
@@ -441,7 +379,6 @@ def log_analysis_start(date: str):
 
 1. **Lambda Concurrency**: Auto-scaling basado en demanda
 2. **Database Scaling**: MongoDB Atlas auto-scaling
-3. **API Gateway**: Maneja múltiples requests concurrentes
 
 ### Vertical Scaling
 
@@ -449,4 +386,4 @@ def log_analysis_start(date: str):
 2. **Timeout Configuration**: Configurable por tipo de operación
 3. **Connection Limits**: Configurables por servicio
 
-Este diseño proporciona una base sólida para implementar el backend de la aplicación, enfocándose en la escalabilidad, mantenibilidad y performance requeridas para procesar eficientemente el Boletín Oficial de Argentina.
+Este diseño es preliminar creado por Kiro.dev y modificado por LLB

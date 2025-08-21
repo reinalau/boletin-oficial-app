@@ -13,48 +13,10 @@ cd scripts\iac; terraform apply -var-file="terraform.tfvars" -auto-approve
 
 --------------------------
 
-para probar el frontend pegar url:
+para probar el frontend pegar url https de lambda deployada :
 frontend/js/api.js - Cliente API principal
 frontend/test.html - Página de prueba principal
 frontend/test-simple.js - Script de prueba simple
 frontend/debug-test.html - Página de debug
 
 
-✅ Deployment completado con éxito:
-Lambda Layer: Versión 2 con dependencias compiladas para Linux
-Lambda Function: Actualizada para usar el nuevo layer
-API Gateway: Funcionando en https://uu3c5q9pu4.execute-api.us-east-1.amazonaws.com/v1/analyze
-🧪 Ahora puedes probar la Lambda:
-En AWS Console:
-Ve a AWS Lambda Console
-Abre: boletin-oficial-analyzer
-Usa el payload que te recomendé:
-{
-  "httpMethod": "POST",
-  "headers": {
-    "Content-Type": "application/json",
-    "User-Agent": "AWS-Console-Test/1.0"
-  },
-  "body": "{}",
-  "queryStringParameters": null,
-  "pathParameters": null,
-  "requestContext": {
-    "identity": {
-      "sourceIp": "127.0.0.1"
-    }
-  }
-}
-O desde API Gateway:
-También puedes probar directamente el endpoint:
-
-POST https://uu3c5q9pu4.execute-api.us-east-1.amazonaws.com/v1/analyze
-Con body:
-
-{
-  "fecha": "2024-12-15",
-  "forzar_reanalisis": false
-}
-🔍 Qué cambió:
-✅ Dependencias Linux: pydantic_core ahora compilado para Linux
-✅ Layer separado: Dependencias en layer, código en función
-✅ Tamaño optimizado: Función solo 17KB, layer 5.8MB

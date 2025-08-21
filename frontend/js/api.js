@@ -294,21 +294,21 @@ class APIConfig {
       // Desarrollo local
       return {
         baseURL: lambdaUrl,
-        timeout: 120000, // 2 minutos para análisis largos
+        timeout: 300000, // 2 minutos para análisis largos
         retryAttempts: 2
       };
     } else if (hostname.includes('vercel.app') || hostname.includes('netlify.app')) {
       // Staging/Preview
       return {
         baseURL: lambdaUrl,
-        timeout: 120000,
+        timeout: 300000,
         retryAttempts: 2
       };
     } else {
       // Producción
       return {
         baseURL: lambdaUrl,
-        timeout: 120000,
+        timeout: 300000,
         retryAttempts: 2
       };
     }

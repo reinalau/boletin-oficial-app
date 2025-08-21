@@ -1,4 +1,4 @@
-# Plan de Implementación
+# Plan de Implementación preliminar...luego cambio!
 
 - [x] 1. Configurar estructura del proyecto y dependencias
 

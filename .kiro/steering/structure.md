@@ -53,10 +53,9 @@ boletin-oficial-telegram-app/
 
 ### Build & Deployment Scripts
 - `scripts/setup.bat`: Initial project setup
-- `build.bat`: Lambda package builder
-- `deploy.bat`: Full deployment orchestrator
-- `destroy.bat`: Infrastructure cleanup
-- `test_dev.bat`: Development testing
+- `build_layer_docker.ps1`: Lambda package layer builder
+- `build_lambda_only.bat`: Lambda package builder
+- deploy --> scripts/iac
 
 ## Configuration Files
 
@@ -71,6 +70,7 @@ boletin-oficial-telegram-app/
 - Lambda environment variables: Runtime secrets (API keys, connection strings)
 
 ### Build Artifacts (Generated)
+- `lambda_layer.zip`: Deployment package
 - `lambda_deployment.zip`: Deployment package
 - `lambda_package/`: Temporary build directory
 - `terraform.tfstate`: Infrastructure state file

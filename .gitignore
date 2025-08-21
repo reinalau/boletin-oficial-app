@@ -33,6 +33,7 @@ scripts/iac/.terraform.lock.hcl
 
 # Lambda deployment package
 lambda_deployment.zip
+lambda_layer.zip
 lambda_package/
 
 # Build artifacts
@@ -384,6 +385,8 @@ settings.local.json
 
 # Auxiliarres no necesarios
 NotaDeploy.txt
+google_auth_httplib2.py
+google_generativeai-0.8.5-py3.13-nspkg.pth
 
 # ============================================================================
 # ARCHIVOS PERMITIDOS (FORZAR INCLUSIÓN)
