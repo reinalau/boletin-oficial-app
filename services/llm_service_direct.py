@@ -42,8 +42,8 @@ class LLMAnalysisServiceDirect:
             logger.error(f"Error inicializando LLMAnalysisServiceDirect: {str(e)}")
             raise
     
-    def crear_sesion_pdf_anterior(self, fecha_boletin: str = None):
-        """Crea una nueva sesión con cookies frescas"""
+    def crear_sesion_pdf_fecha(self, fecha_boletin: str = None):
+        """Crea una nueva sesión con cookies frescas para poder consultar el boletin de fecha_boletin"""
         session = requests.Session()
     
         # Visitar página principal para establecer sesión
@@ -256,74 +256,21 @@ class LLMAnalysisServiceDirect:
     def _create_analysis_contents(self,param_date) -> list:
         """Crea el contenido para análisis en Gemini"""
 
-        current_date = datetime.now().strftime('%Y-%m-%d')
+        #obtiene el pdf de la fecha
+        pdf_base64 = self.crear_sesion_pdf_fecha(param_date)
 
-        if current_date == param_date :
-                logger.info("consulta dia actual")   
-                prompt_text = f"""
-        Analiza los puntos mas importantes de el contenido de la Primera Sección del Boletín Oficial de la República Argentina - Sección 1 - Legislación y Avisos Oficiales para la Edición de fecha {param_date}
-
-        INSTRUCCIONES BUSQUEDA:
-        - Accede nuevamente a la url que contiene la información del Boletín Oficial de la Republica Argentina para la primera sección "Legislación y Avisos Oficiales" en: https://s3.arsat.com.ar/cdn-bo-001/pdf-del-dia/primera.pdf
-        -Ignorar conflictos de fechas internas en el documento de la url ya que aqui se recopilan erratas y nuevas normativas publicadas con la nueva fecha {param_date}.
-
-        INSTRUCCIONES PARA EL ANÁLISIS REQUERIDO:
-        - Tomar la fuente seleccionada anteriormente para analizar y hacer el resumen ejecutivo de los cambios normativos relevantes como privatizaciones, área previsional, desregulaciones importantes (para la fecha indicada).
-        - Lista detallada de cambios principales: decretos, resoluciones, disposiciones, avisos oficiales, convenciones colectivas de trabajo y si se identifican cambio en leyes.
-        - Impacto estimado de los cambios.
-        - Áreas del derecho afectadas.
-
-        FORMATO DE RESPUESTA (JSON válido):
-        {{
-        "resumen": "Resumen ejecutivo de los cambios normativos encontrados para la fecha actual",
-        "cambios_principales": [
-        {{
-        "tipo": "decreto|resolución|ley|disposición",
-        "numero": "número del instrumento legal",
-        "rotulo": "Titulo exacto completo asociado al instrumento legal (Ejemplo: AGENCIA DE RECAUDACIÓN Y CONTROL ADUANERO. DIRECCIÓN REGIONAL SANTA FE. Disposición 44/2025)",
-        "titulo": "título o tema principal",
-        "descripcion": "descripción detallada del cambio",
-        "impacto": "alto|medio|bajo",
-        "justificacion_impacto": "explicación del nivel de impacto"
-        }}
-        ],
-        "impacto_estimado": "Análisis general del impacto de todos los cambios",
-        "areas_afectadas": ["tributario", "laboral", "comercial", "civil", "penal", "administrativo", "otros"]
-        }}
-
-        IMPORTANTE:
-        Responde ÚNICAMENTE con el JSON válido, sin texto adicional.
-        Asegúrate de que todas las áreas afectadas estén en minúsculas.
-        Utilizar y acceder nuevamente a la url que contiene la información para analizar: https://s3.arsat.com.ar/cdn-bo-001/pdf-del-dia/primera.pdf
-        Responder en español..
-        """
-                contents = [
-                        types.Content(
-                            role="user",
-                            parts=[
-                                types.Part.from_text(text=prompt_text),
-                            ],
-                         ),
-                ]
-        
-        else:
-                # si tiene que consultar edición anterior
-                logger.info("consulta dias anteriores")
-                #obtiene el pdf de la fecha
-                pdf_base64 = self.crear_sesion_pdf_anterior(param_date)
-
-                prompt_text = f"""
+        prompt_text = f"""
         Analiza los puntos mas importantes de el contenido adjunto de la Primera Sección del Boletín Oficial de la República Argentina - Sección 1 - Legislación y Avisos Oficiales para la Edición adjunto de fecha {param_date}
         
         INSTRUCCIONES PARA EL ANÁLISIS REQUERIDO:
-        - Tomar la fuente adjunta  anteriormente para analizar y hacer el resumen ejecutivo de los cambios normativos relevantes como privatizaciones, área previsional, desregulaciones importantes (para la fecha indicada).
+        - Tomar la fuente adjunta  para analizar y hacer el resumen ejecutivo de los cambios normativos relevantes como privatizaciones, área previsional, desregulaciones importantes (para la fecha indicada).
         - Lista detallada de cambios principales: decretos, resoluciones, disposiciones, avisos oficiales, convenciones colectivas de trabajo y si se identifican cambio en leyes.
         - Impacto estimado de los cambios.
         - Áreas del derecho afectadas.
 
         FORMATO DE RESPUESTA (JSON válido):
         {{
-        "resumen": "Resumen ejecutivo de los cambios normativos encontrados para la fecha actual",
+        "resumen": "Resumen ejecutivo de los cambios normativos encontrados para {param_date}",
         "cambios_principales": [
         {{
         "tipo": "decreto|resolución|ley|disposición",
@@ -345,19 +292,19 @@ class LLMAnalysisServiceDirect:
         Responder en español..
         """
 
-                contents = [
-                    types.Content(
-                        role="user",
-                        parts=[
-                            types.Part.from_bytes(
-                                mime_type="application/pdf",
-                                data=base64.b64decode(
-                                    pdf_base64
-                                ),
-                            ),
-                            types.Part.from_text(text=prompt_text),
-                        ],
-                    ),
+        contents = [
+            types.Content(
+                role="user",
+                parts=[
+                       types.Part.from_bytes(
+                       mime_type="application/pdf",
+                       data=base64.b64decode(
+                       pdf_base64
+                                            ),
+                        ),
+                        types.Part.from_text(text=prompt_text),
+                    ],
+                        ),
                 ]
         
         logger.info( contents)
@@ -398,8 +345,8 @@ INSTRUCCIONES DE BÚSQUEDA:
    - Sitios de análisis económico y legal
 
 2. 
- -No incluyas busquedas de: https://www.boletinoficial.gob.ar/ y https://boa.com.ar/
- -No incluyas busquedas de publicaciones con fechas anteriores a {fecha_boletin} .   
+ -No incluyas busquedas de: https://www.boletinoficial.gob.ar/ y https://boa.com.ar/ (BOA)
+ -No incluyas busquedas de publicaciones con fechas anteriores a 2 dias de {fecha_boletin} .   
 
 3. Busca específicamente análisis, opiniones o comentarios para la fecha {fecha_boletin} sobre:
    - Los cambios normativos del {fecha_boletin}
