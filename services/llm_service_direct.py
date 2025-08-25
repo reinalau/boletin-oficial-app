@@ -213,7 +213,7 @@ class LLMAnalysisServiceDirect:
                 
                 generate_content_config = types.GenerateContentConfig(
                     tools=tools,
-                    temperature=0,
+                    temperature=1,
                 )
                 
                 # Realizar llamada a Gemini

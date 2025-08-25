@@ -237,6 +237,7 @@ class BoletinApp {
     // Scroll suave a resultados
     Utils.smoothScrollTo(resultsSection, 20);
 
+    console.log('Resultados mostrados correctamente');
   }
 
   /**
@@ -270,6 +271,7 @@ class BoletinApp {
       container.appendChild(changeElement);
     });
 
+    console.log('Cambios principales mostrados:', changes.length);
   }
 
   /**
@@ -290,6 +292,7 @@ class BoletinApp {
       container.appendChild(areaElement);
     });
 
+    console.log('Áreas afectadas mostradas:', areas.length);
   }
 
   /**
@@ -341,6 +344,7 @@ class BoletinApp {
       container.appendChild(opinionElement);
     });
 
+    console.log('Opiniones de expertos mostradas:', opinions.length);
   }
 
   /**
@@ -521,7 +525,6 @@ class BoletinApp {
           {
             tipo: "decreto",
             numero: "123/2024",
-            rotulo:"PODER EJECUTIVO. Decreto 575/2025. DNU-2025-575-APN-PTE - Disposiciones.",
             titulo: "Modificación del Impuesto a las Ganancias",
             descripcion: "Se establecen nuevas alícuotas para personas físicas y jurídicas, con vigencia a partir del próximo mes.",
             impacto: "alto"
@@ -529,7 +532,6 @@ class BoletinApp {
           {
             tipo: "resolución",
             numero: "456/2024",
-            rotulo:"MINISTERIO DE ECONOMIA. Decreto 456/2024. DNU-2025-575-APN-PTE - Disposiciones.",
             titulo: "Régimen de Trabajo Remoto",
             descripcion: "Actualización de las condiciones para el trabajo a distancia en el sector público.",
             impacto: "medio"

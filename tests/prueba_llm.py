@@ -21,7 +21,7 @@ def crear_sesion_fresca():
 
 session = crear_sesion_fresca()
 
-url1= 'https://www.boletinoficial.gob.ar/edicion/actualizar/22-08-2025'
+url1= 'https://www.boletinoficial.gob.ar/edicion/actualizar/23-08-2025'
 
 response = session.get(url1)
 
@@ -62,7 +62,7 @@ else:
 
 
 prompt_text = f"""
-        Analiza los puntos mas importantes de el contenido adjunto de la Primera Sección del Boletín Oficial de la República Argentina - Sección 1 - Legislación y Avisos Oficiales para la Edición adjunto de fecha 20250822
+        Actua como un experto en asuntos Legales y Técnicos gubernamentales para analizar los puntos mas importantes de el contenido adjunto de la Primera Sección del Boletín Oficial de la República Argentina: Legislación y Avisos Oficiales para la Edición adjunto de fecha 20250823
         
         INSTRUCCIONES PARA EL ANÁLISIS REQUERIDO:
         - Tomar la fuente adjunta  para analizar y hacer el resumen ejecutivo de los cambios normativos relevantes como privatizaciones, área previsional, desregulaciones importantes (para la fecha indicada).
@@ -98,7 +98,7 @@ prompt_text = f"""
 
 client = genai.Client(
     #Obtener apikey de google gemini
-        api_key="XXXXX",
+        api_key="AIzaSyD3aqlgDVOxwmFdjk8pyWpWJ7gnzLko2hI",
     )
 
 model = "gemini-2.5-flash"

@@ -73,7 +73,11 @@ class Utils {
     
     // Verificar que no sea futura
     if (date > today) return false;
-    
+
+    // Verificar que no sea sábado ni domingo
+    const day = date.getDay();
+    if (day === 5 || day === 6) return false;
+       
     return true;
   }
 

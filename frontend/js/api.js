@@ -294,21 +294,21 @@ class APIConfig {
       // Desarrollo local
       return {
         baseURL: lambdaUrl,
-        timeout: 300000, // 2 minutos para análisis largos
+        timeout: 120000, // 2 minutos para análisis largos
         retryAttempts: 2
       };
     } else if (hostname.includes('vercel.app') || hostname.includes('netlify.app')) {
       // Staging/Preview
       return {
         baseURL: lambdaUrl,
-        timeout: 300000,
+        timeout: 120000,
         retryAttempts: 2
       };
     } else {
       // Producción
       return {
         baseURL: lambdaUrl,
-        timeout: 300000,
+        timeout: 120000,
         retryAttempts: 2
       };
     }
@@ -322,19 +322,19 @@ class APIConfig {
     // 1. Variable de entorno de Netlify (inyectada en build time)
     // Netlify reemplaza process.env.VARIABLE_NAME con el valor real durante el build
     if (typeof process !== 'undefined' && process.env && process.env.LAMBDA_FUNCTION_URL) {
-      console.log('🔧 Using Lambda URL from Netlify env:...');
+      console.log('🔧 Using Lambda URL from Netlify env:', process.env.LAMBDA_FUNCTION_URL);
       return process.env.LAMBDA_FUNCTION_URL;
     }
 
     // 2. Variable global definida en HTML (para casos especiales)
     if (typeof window !== 'undefined' && window.LAMBDA_FUNCTION_URL) {
-      console.log('🔧 Using Lambda URL from window global: window.LAMBDA_FUNCTION_URL');
+      console.log('🔧 Using Lambda URL from window global:', window.LAMBDA_FUNCTION_URL);
       return window.LAMBDA_FUNCTION_URL;
     }
 
     // 3. Fallback a URL por defecto (desarrollo local)
     const fallbackUrl = 'https://tuv37pjekt5e5emvtscqouv7jq0cyaiu.lambda-url.us-east-1.on.aws';
-    
+    console.log('⚠️ Using fallback Lambda URL (configure LAMBDA_FUNCTION_URL in Netlify):', fallbackUrl);
     return fallbackUrl;
   }
 
