@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test - Comportamiento de Botones</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+        .button { padding: 10px 15px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; }
+        .button:disabled { background: #ccc; cursor: not-allowed; opacity: 0.6; }
+        .primary { background: #0088cc; color: white; }
+        .secondary { background: #666; color: white; }
+        .status { margin: 10px 0; padding: 10px; background: #f0f0f0; }
+    </style>
+</head>
+<body>
+    <h1>Test - Comportamiento de Botones Boletín Oficial</h1>
+    
+    <div class="test-section">
+        <h2>Estado Actual</h2>
+        <div class="status" id="status">
+            <strong>Fecha:</strong> <span id="current-date">No seleccionada</span><br>
+            <strong>Análisis del Boletín:</strong> <span id="boletin-status">No disponible</span><br>
+            <strong>Botón Expertos:</strong> <span id="experts-button-status">Deshabilitado</span>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Controles de Prueba</h2>
+        <input type="date" id="test-date" class="button">
+        <button id="simulate-boletin" class="button primary">Simular Análisis Boletín</button>
+        <button id="clear-analysis" class="button secondary">Limpiar Análisis</button>
+    </div>
+
+    <div class="test-section">
+        <h2>Botones de la Aplicación</h2>
+        <button id="analyze-boletin-btn" class="button primary" disabled>
+            Analizar Boletín
+        </button>
+        <button id="analyze-experts-btn" class="button secondary" disabled>
+            Analizar Opiniones de Expertos
+        </button>
+    </div>
+
+    <div class="test-section">
+        <h2>Casos de Prueba</h2>
+        <ol>
+            <li><strong>Sin fecha:</strong> Ambos botones deshabilitados ✓</li>
+            <li><strong>Con fecha válida, sin análisis:</strong> Solo botón boletín habilitado ✓</li>
+            <li><strong>Con fecha válida y análisis:</strong> Ambos botones habilitados ✓</li>
+            <li><strong>Cambio de fecha con análisis:</strong> Botón expertos se deshabilita ✓</li>
+        </ol>
+    </div>
+
+    <script>
+        // Simular la lógica de la aplicación
+        let currentAnalysis = null;
+
+        // Función para verificar fecha válida
+        function isValidDate(date) {
+            return date && date.length === 10 && new Date(date) <= new Date();
+        }
+
+        // Función para verificar análisis válido
+        function hasValidBoletinAnalysis() {
+            const currentDate = document.getElementById('test-date').value;
+            return currentAnalysis && 
+                   currentAnalysis.analisis && 
+                   currentAnalysis.fecha === currentDate;
+        }
+
+        // Función para actualizar estado de botones
+        function setButtonsState() {
+            const analyzeBoletinBtn = document.getElementById('analyze-boletin-btn');
+            const analyzeExpertsBtn = document.getElementById('analyze-experts-btn');
+            const isValidDateValue = isValidDate(document.getElementById('test-date').value);
+            const hasBoletinAnalysis = hasValidBoletinAnalysis();
+
+            analyzeBoletinBtn.disabled = !isValidDateValue;
+            analyzeExpertsBtn.disabled = !isValidDateValue || !hasBoletinAnalysis;
+
+            // Actualizar status
+            updateStatus();
+        }
+
+        // Función para actualizar el status visual
+        function updateStatus() {
+            const currentDate = document.getElementById('test-date').value;
+            const isValidDateValue = isValidDate(currentDate);
+            const hasBoletinAnalysis = hasValidBoletinAnalysis();
+            const expertsButtonEnabled = !document.getElementById('analyze-experts-btn').disabled;
+
+            document.getElementById('current-date').textContent = currentDate || 'No seleccionada';
+            document.getElementById('boletin-status').textContent = hasBoletinAnalysis ? 'Disponible' : 'No disponible';
+            document.getElementById('experts-button-status').textContent = expertsButtonEnabled ? 'Habilitado' : 'Deshabilitado';
+        }
+
+        // Event listeners
+        document.getElementById('test-date').addEventListener('change', function() {
+            const newDate = this.value;
+            
+            // Si cambia la fecha y hay análisis, limpiar análisis
+            if (currentAnalysis && currentAnalysis.fecha !== newDate) {
+                currentAnalysis = null;
+                console.log('Análisis limpiado por cambio de fecha');
+            }
+            
+            setButtonsState();
+        });
+
+        document.getElementById('simulate-boletin').addEventListener('click', function() {
+            const date = document.getElementById('test-date').value;
+            if (!isValidDate(date)) {
+                alert('Selecciona una fecha válida primero');
+                return;
+            }
+
+            currentAnalysis = {
+                fecha: date,
+                analisis: {
+                    resumen: 'Análisis simulado del boletín',
+                    cambios_principales: []
+                }
+            };
+
+            console.log('Análisis del boletín simulado para:', date);
+            setButtonsState();
+        });
+
+        document.getElementById('clear-analysis').addEventListener('click', function() {
+            currentAnalysis = null;
+            console.log('Análisis limpiado');
+            setButtonsState();
+        });
+
+        // Configurar fecha de hoy por defecto
+        document.getElementById('test-date').value = new Date().toISOString().split('T')[0];
+        
+        // Estado inicial
+        setButtonsState();
+    </script>
+</body>
+</html>

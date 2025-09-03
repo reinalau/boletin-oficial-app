@@ -391,7 +391,7 @@ class APIConfig {
     }
 
     // 3. Fallback a URL por defecto (desarrollo local)
-    const fallbackUrl = 'https://tuv37pjekt5e5emvtscqouv7jq0cyaiu.lambda-url.us-east-1.on.aws';
+    const fallbackUrl = 'https://tuv37pjekt5e5emvtscqouv7jq000000.lambda-url.us-east-1.on.aws';
     console.log('⚠️ Using fallback Lambda URL (configure LAMBDA_FUNCTION_URL in Netlify):', fallbackUrl);
     return fallbackUrl;
   }

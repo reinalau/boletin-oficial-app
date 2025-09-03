@@ -113,6 +113,17 @@ class BoletinApp {
     // Validar fecha
     const isValid = Utils.isValidDate(date);
 
+    // Al cambiar fecha, limpiar análisis actual y resetear botón de expertos
+    if (this.currentAnalysis && this.currentAnalysis.fecha !== date) {
+      this.currentAnalysis = null;
+      this.hideResults();
+      
+      // Resetear botón de expertos a estado inicial
+      const analyzeExpertsBtn = document.getElementById('analyze-experts-btn');
+      analyzeExpertsBtn.querySelector('.button-text').textContent = 'Analizar Opiniones de Expertos';
+      analyzeExpertsBtn.classList.remove('update-mode');
+    }
+
     // Solo actualizar estado de botones si no hay operación en curso
     if (!this.isLoading) {
       this.setButtonsState('idle');
@@ -522,12 +533,12 @@ class BoletinApp {
     // Limpiar cualquier estado de loading compacto
     this.hideCompactLoading(analyzeExpertsBtn);
 
-    // Resetear botones a estado normal
-    this.setButtonsState('idle');
-
     // Resetear texto y modo del botón de expertos
     analyzeExpertsBtn.querySelector('.button-text').textContent = 'Analizar Opiniones de Expertos';
     analyzeExpertsBtn.classList.remove('update-mode');
+
+    // Resetear botones a estado normal (esto deshabilitará el botón de expertos)
+    this.setButtonsState('idle');
 
     // Mostrar botón principal de Telegram
     if (this.telegram) {
@@ -569,6 +580,19 @@ class BoletinApp {
   }
 
   /**
+   * Verifica si hay un análisis del boletín válido para la fecha actual
+   * @returns {boolean} True si hay análisis del boletín válido
+   */
+  hasValidBoletinAnalysis() {
+    const datePicker = document.getElementById('date-picker');
+    const currentDate = datePicker.value;
+    
+    return this.currentAnalysis && 
+           this.currentAnalysis.analisis && 
+           this.currentAnalysis.fecha === currentDate;
+  }
+
+  /**
    * Maneja el estado de los botones durante operaciones
    */
   setButtonsState(state) {
@@ -591,13 +615,16 @@ class BoletinApp {
         break;
 
       case 'idle':
-        // Estado normal: habilitar ambos si hay fecha válida
+        // Estado normal: habilitar boletín si hay fecha válida, expertos solo si hay análisis
         const datePicker = document.getElementById('date-picker');
         const isValidDate = Utils.isValidDate(datePicker.value);
+        const hasBoletinAnalysis = this.hasValidBoletinAnalysis();
 
         analyzeBoletinBtn.disabled = !isValidDate;
-        analyzeExpertsBtn.disabled = !isValidDate;
-        console.log('Botones en estado normal - válido:', isValidDate);
+        // El botón de expertos requiere fecha válida Y análisis del boletín para esa fecha
+        analyzeExpertsBtn.disabled = !isValidDate || !hasBoletinAnalysis;
+        
+        console.log('Botones en estado normal - fecha válida:', isValidDate, 'tiene análisis:', hasBoletinAnalysis);
         break;
 
       case 'boletin-completed':

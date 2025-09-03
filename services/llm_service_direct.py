@@ -324,7 +324,7 @@ class LLMAnalysisServiceDirect:
         
         
         prompt_text = f"""
-    Buscar análisis del contenido del Boletín Oficial de la República Argentina para la fecha {fecha_boletin} en los principales portales de Argentina. 
+    Buscar en los principales portales y diarios de Argentina y el mundo, análisis del contenido del Boletín Oficial de la República Argentina para la fecha {fecha_boletin} . 
 
     CONTEXTO DEL BOLETÍN:
     Resumen: {normativa_summary}
