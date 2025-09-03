@@ -627,6 +627,59 @@ class MongoDBService:
             if not isinstance(analisis['areas_afectadas'], list):
                 raise ValueError("areas_afectadas debe ser una lista")
     
+    def update_analysis_expert_opinions(self, date: str, expert_opinions: list) -> bool:
+        """
+        Update existing analysis with expert opinions
+        
+        Args:
+            date: Date in YYYY-MM-DD format
+            expert_opinions: List of expert opinions to add
+            
+        Returns:
+            bool: True if update was successful
+            
+        Raises:
+            Exception: If there's an error in the update
+        """
+        try:
+            # Validate date format
+            self._validate_date_format(date)
+            
+            # Validate opinions structure
+            if expert_opinions:
+                self._validate_opinions_structure(expert_opinions)
+            
+            # Execute update with retry
+            def _update_operation():
+                result = self._collection.update_one(
+                    {'fecha': date},
+                    {
+                        '$set': {
+                            'opiniones_expertos': expert_opinions,
+                            'metadatos.fecha_actualizacion_opiniones': datetime.utcnow()
+                        }
+                    }
+                )
+                return result.modified_count > 0
+            
+            updated = self._execute_with_retry(_update_operation)
+            
+            error_handler.log_info('analysis_expert_opinions_updated', {
+                'fecha': date,
+                'updated': updated,
+                'opinions_count': len(expert_opinions)
+            })
+            
+            return updated
+            
+        except Exception as e:
+            error_handler.log_error(ErrorCode.DATABASE_QUERY_ERROR, e, {
+                'action': 'update_analysis_expert_opinions',
+                'fecha': date,
+                'opinions_count': len(expert_opinions) if expert_opinions else 0
+            })
+            raise
+
     def _validate_opinions_structure(self, opiniones: list):
         """
         Valida la estructura de las opiniones de expertos.

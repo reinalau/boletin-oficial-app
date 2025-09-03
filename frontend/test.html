@@ -256,8 +256,8 @@ ${error.details ? JSON.stringify(error.details, null, 2) : 'No hay detalles adic
             try {
                 const startTime = Date.now();
                 
-                // Hacer una petición simple para probar conectividad
-                const response = await fetch('https://w6scjpjua3bmj272d2dqhxy2ve0yrkpf.lambda-url.us-east-1.on.aws', {
+                // Hacer una petición simple para probar conectividad - CAMBIAR POR LA URL DE TU LAMBDA!!
+                const response = await fetch('https://xxxxxxxx.lambda-url.us-east-1.on.aws', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

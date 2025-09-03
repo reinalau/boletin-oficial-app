@@ -182,7 +182,7 @@ echo 📚 Documentación disponible:
 echo    - README.md - Documentación general
 echo    - DEPLOYMENT_GUIDE.md - Guía de despliegue detallada
 echo    - TROUBLESHOOTING.md - Solución de problemas
-echo    - API_DOCUMENTATION.md - Documentación de API
+echo    
 echo.
 
 echo ⚠️  RECORDATORIO DE SEGURIDAD:

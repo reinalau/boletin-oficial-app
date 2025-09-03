@@ -207,6 +207,9 @@ def validate_request_parameters(request: Dict[str, Any]) -> Dict[str, Any]:
         # Extract parameters from body
         body = request['body']
         
+        # Get action parameter to determine which operation to perform
+        action = body.get('action', 'analyze_boletin')  # Default to full analysis for backward compatibility
+        
         # Get fecha parameter
         fecha = body.get('fecha')
         if not fecha:
@@ -233,9 +236,25 @@ def validate_request_parameters(request: Dict[str, Any]) -> Dict[str, Any]:
             else:
                 forzar_reanalisis = bool(forzar_reanalisis)
         
+        # Get forzar_actualizacion parameter (optional, for expert opinions)
+        forzar_actualizacion = body.get('forzar_actualizacion', False)
+        if not isinstance(forzar_actualizacion, bool):
+            # Try to convert string to boolean
+            if isinstance(forzar_actualizacion, str):
+                forzar_actualizacion = forzar_actualizacion.lower() in ['true', '1', 'yes', 'on']
+            else:
+                forzar_actualizacion = bool(forzar_actualizacion)
+        
+        # Validate action parameter
+        valid_actions = ['analyze_boletin', 'get_expert_opinions']
+        if action not in valid_actions:
+            raise ValueError(f"Invalid action: {action}. Must be one of: {valid_actions}")
+        
         validated_params = {
+            'action': action,
             'fecha': fecha,
             'forzar_reanalisis': forzar_reanalisis,
+            'forzar_actualizacion': forzar_actualizacion,
             'seccion': 'legislacion_avisos_oficiales'  # Fixed section for now
         }
         
@@ -293,67 +312,175 @@ def process_analysis_request(params: Dict[str, Any], context) -> Dict[str, Any]:
     Returns:
         dict: Analysis result
     """
+    action = params['action']
     fecha = params['fecha']
     forzar_reanalisis = params['forzar_reanalisis']
     
+    try:
+        if action == 'analyze_boletin':
+            return process_boletin_analysis(fecha, forzar_reanalisis, context)
+        elif action == 'get_expert_opinions':
+            forzar_actualizacion = params.get('forzar_actualizacion', False)
+            return process_expert_opinions_request(fecha, context, forzar_actualizacion)
+        else:
+            raise ValueError(f"Unknown action: {action}")
+        
+    except Exception as e:
+        error_handler.log_error(ErrorCode.UNKNOWN_ERROR, e, {
+            'action': 'process_analysis_request',
+            'request_action': action,
+            'fecha': fecha,
+            'forced': forzar_reanalisis
+        })
+        raise
+
+
+def process_boletin_analysis(fecha: str, forzar_reanalisis: bool, context) -> Dict[str, Any]:
+    """
+    Process bulletin analysis only (without expert opinions)
+    
+    Args:
+        fecha: Date for analysis
+        forzar_reanalisis: Force reanalysis flag
+        context: Lambda context
+        
+    Returns:
+        dict: Analysis result without expert opinions
+    """
     try:
         # Check if analysis already exists (cache logic)
         if not forzar_reanalisis:
             existing_analysis = check_existing_analysis(fecha)
             if existing_analysis:
                 error_handler.log_info('analysis_retrieved_from_cache', {
-                    'fecha': fecha
+                    'fecha': fecha,
+                    'has_expert_opinions': len(existing_analysis.get('opiniones_expertos', [])) > 0
                 })
-                # Add cache metadata
-                existing_analysis['metadatos']['desde_cache'] = True
-                return existing_analysis
+                # Return complete analysis (including expert opinions if they exist)
+                complete_analysis = {
+                    'fecha': existing_analysis['fecha'],
+                    'analisis': existing_analysis.get('analisis', {}),
+                    'opiniones_expertos': existing_analysis.get('opiniones_expertos', []),
+                    'metadatos': existing_analysis.get('metadatos', {})
+                }
+                complete_analysis['metadatos']['desde_cache'] = True
+                return complete_analysis
         
         # Perform new analysis
-        error_handler.log_info('starting_new_analysis', {
+        error_handler.log_info('starting_new_boletin_analysis', {
             'fecha': fecha,
             'forced': forzar_reanalisis
         })
         
-        # Step 1: Analyze normativa with LLM using direct URL access (simplified)
+        # Step 1: Analyze normativa with LLM using direct URL access
         analysis_result = analyze_normativa_with_llm(fecha, context)
         
-        # Check if analysis failed - if so, don't continue with expert opinions or save to DB
+        # Check if analysis failed
         if analysis_result.get('error', False):
             error_handler.log_error(ErrorCode.LLM_API_ERROR, Exception(analysis_result.get('error_message', 'Unknown error')), {
                 'fecha': fecha,
                 'action': 'analyze_normativa_failed'
             })
-            # Return error response without saving to database
             return analysis_result
         
-        # Step 4: Get expert opinions (only if analysis was successful)
-        expert_opinions = get_expert_opinions(analysis_result, context, fecha)
+        # Prepare bulletin-only analysis data (without expert opinions)
+        bulletin_analysis = prepare_bulletin_analysis_data(fecha, analysis_result)
         
-        # Step 3: Prepare complete analysis data
-        complete_analysis = prepare_analysis_data(
-            fecha, analysis_result, expert_opinions
-        )
-        
-        # Step 6: Save analysis to database (only if analysis was successful)
-        save_analysis_to_database(complete_analysis, context)
+        # Save bulletin analysis to database
+        save_analysis_to_database(bulletin_analysis, context)
         
         # Add metadata
-        complete_analysis['metadatos']['desde_cache'] = False
+        bulletin_analysis['metadatos']['desde_cache'] = False
         
-        error_handler.log_info('new_analysis_completed', {
+        error_handler.log_info('boletin_analysis_completed', {
             'fecha': fecha,
             'method': 'direct_gemini_analysis',
-            'changes_count': len(analysis_result.get('cambios_principales', [])),
-            'opinions_count': len(expert_opinions)
+            'changes_count': len(analysis_result.get('cambios_principales', []))
         })
         
-        return complete_analysis
+        return bulletin_analysis
         
     except Exception as e:
         error_handler.log_error(ErrorCode.UNKNOWN_ERROR, e, {
-            'action': 'process_analysis_request',
+            'action': 'process_boletin_analysis',
             'fecha': fecha,
             'forced': forzar_reanalisis
+        })
+        raise
+
+
+def process_expert_opinions_request(fecha: str, context, forzar_actualizacion: bool = False) -> Dict[str, Any]:
+    """
+    Process expert opinions request for existing analysis
+    
+    Args:
+        fecha: Date for analysis
+        context: Lambda context
+        forzar_actualizacion: Force update of expert opinions
+        
+    Returns:
+        dict: Expert opinions result
+    """
+    try:
+        # Check if bulletin analysis exists
+        existing_analysis = check_existing_analysis(fecha)
+        if not existing_analysis:
+            raise ValueError(f"No bulletin analysis found for date {fecha}. Please analyze the bulletin first.")
+        
+        # Check if expert opinions already exist and if we should use cache
+        if (not forzar_actualizacion and 
+            existing_analysis.get('opiniones_expertos') and 
+            len(existing_analysis.get('opiniones_expertos', [])) > 0):
+            error_handler.log_info('expert_opinions_retrieved_from_cache', {
+                'fecha': fecha,
+                'opinions_count': len(existing_analysis.get('opiniones_expertos', []))
+            })
+            return {
+                'fecha': fecha,
+                'opiniones_expertos': existing_analysis.get('opiniones_expertos', []),
+                'metadatos': {
+                    'desde_cache': True,
+                    'fecha_creacion': existing_analysis.get('metadatos', {}).get('fecha_creacion'),
+                    'tiempo_procesamiento': 0
+                }
+            }
+        
+        error_handler.log_info('starting_expert_opinions_analysis', {
+            'fecha': fecha,
+            'forced_update': forzar_actualizacion
+        })
+        
+        # Get analysis result from existing data
+        analysis_result = existing_analysis.get('analisis', {})
+        
+        # Get expert opinions (always fresh when forced or when none exist)
+        expert_opinions = get_expert_opinions(analysis_result, context, fecha)
+        
+        # Update the existing document with expert opinions
+        update_analysis_with_expert_opinions(fecha, expert_opinions, context)
+        
+        error_handler.log_info('expert_opinions_completed', {
+            'fecha': fecha,
+            'opinions_count': len(expert_opinions),
+            'was_update': forzar_actualizacion
+        })
+        
+        return {
+            'fecha': fecha,
+            'opiniones_expertos': expert_opinions,
+            'metadatos': {
+                'desde_cache': False,
+                'fecha_creacion': datetime.utcnow(),
+                'tiempo_procesamiento': 0,  # Will be calculated later
+                'actualizado': forzar_actualizacion
+            }
+        }
+        
+    except Exception as e:
+        error_handler.log_error(ErrorCode.UNKNOWN_ERROR, e, {
+            'action': 'process_expert_opinions_request',
+            'fecha': fecha,
+            'forced_update': forzar_actualizacion
         })
         raise
 
@@ -474,17 +601,17 @@ def get_expert_opinions(analysis_result: Dict[str, Any], context, fecha_boletin:
         return []
 
 
-def prepare_analysis_data(fecha: str, analysis_result: Dict[str, Any], expert_opinions: list) -> Dict[str, Any]:
+
+def prepare_bulletin_analysis_data(fecha: str, analysis_result: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Prepare complete analysis data structure
+    Prepare bulletin analysis data structure (without expert opinions)
     
     Args:
         fecha: Analysis date
         analysis_result: LLM analysis result
-        expert_opinions: Expert opinions
         
     Returns:
-        dict: Complete analysis data
+        dict: Bulletin analysis data
     """
     return {
         'fecha': fecha,
@@ -492,7 +619,7 @@ def prepare_analysis_data(fecha: str, analysis_result: Dict[str, Any], expert_op
         'pdf_url': 'https://www.boletinoficial.gob.ar/',  # Base URL used for analysis
         'contenido_original': 'Análisis realizado con acceso directo a URL del Boletín Oficial',
         'analisis': analysis_result,
-        'opiniones_expertos': expert_opinions,
+        'opiniones_expertos': [],  # Empty initially
         'metadatos': {
             'fecha_creacion': datetime.utcnow(),
             'version_analisis': '2.0',  # Updated version for URL-based analysis
@@ -503,6 +630,43 @@ def prepare_analysis_data(fecha: str, analysis_result: Dict[str, Any], expert_op
             'url_fuente': 'https://www.boletinoficial.gob.ar/'
         }
     }
+
+
+def update_analysis_with_expert_opinions(fecha: str, expert_opinions: list, context) -> bool:
+    """
+    Update existing analysis document with expert opinions
+    
+    Args:
+        fecha: Analysis date
+        expert_opinions: Expert opinions to add
+        context: Lambda context
+        
+    Returns:
+        bool: True if update was successful
+    """
+    try:
+        # Update the document in database
+        success = database_service.update_analysis_expert_opinions(fecha, expert_opinions)
+        
+        if success:
+            error_handler.log_info('analysis_updated_with_expert_opinions', {
+                'fecha': fecha,
+                'opinions_count': len(expert_opinions)
+            })
+        else:
+            error_handler.log_warning('failed_to_update_analysis_with_expert_opinions', {
+                'fecha': fecha,
+                'opinions_count': len(expert_opinions)
+            })
+        
+        return success
+        
+    except Exception as e:
+        error_handler.log_error(ErrorCode.DATABASE_QUERY_ERROR, e, {
+            'action': 'update_analysis_with_expert_opinions',
+            'fecha': fecha
+        })
+        return False
 
 
 def save_analysis_to_database(analysis_data: Dict[str, Any], context) -> str:

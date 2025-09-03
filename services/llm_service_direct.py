@@ -324,57 +324,57 @@ class LLMAnalysisServiceDirect:
         
         
         prompt_text = f"""
-Buscar análisis del contenido del Boletín Oficial de la República Argentina para la fecha {fecha_boletin} en los principales portales de Argentina. 
+    Buscar análisis del contenido del Boletín Oficial de la República Argentina para la fecha {fecha_boletin} en los principales portales de Argentina. 
 
-CONTEXTO DEL BOLETÍN:
-Resumen: {normativa_summary}
+    CONTEXTO DEL BOLETÍN:
+    Resumen: {normativa_summary}
 
-Principales cambios identificados:
-{cambios_texto}
+    Principales cambios identificados:
+    {cambios_texto}
 
-INSTRUCCIONES DE BÚSQUEDA:
-1. Busca en portales argentinos como los del siguiente listado para la fecha {fecha_boletin} :
-   - La Nación (lanacion.com.ar)
-   - Clarín (clarin.com)
-   - Página/12 (pagina12.com.ar)
-   - Ámbito Financiero (ambito.com)
-   - El Cronista (cronista.com)
-   - Infobae (infobae.com)
-   - BAE Negocios (baenegocios.com)
-   - Portales jurídicos especializados.
-   - Sitios de análisis económico y legal
+    INSTRUCCIONES DE BÚSQUEDA:
+    1. Busca en portales argentinos como los del siguiente listado para la fecha {fecha_boletin} :
+    - La Nación (lanacion.com.ar)
+    - Clarín (clarin.com)
+    - Página/12 (pagina12.com.ar)
+    - Ámbito Financiero (ambito.com)
+    - El Cronista (cronista.com)
+    - Infobae (infobae.com)
+    - BAE Negocios (baenegocios.com)
+    - Portales jurídicos especializados.
+    - Sitios de análisis económico y legal
 
-2. 
- -No incluyas busquedas de: https://www.boletinoficial.gob.ar/ y https://boa.com.ar/ (BOA)
- -No incluyas busquedas de publicaciones con fechas anteriores a 2 dias de {fecha_boletin} .   
+    2. 
+    -Excluir de las busquedas los sitios: https://www.boletinoficial.gob.ar/ y https://boa.com.ar/ (BOA)
+    -Excluir publicaciones con fechas anteriores a 2 dias de {fecha_boletin} .   
 
-3. Busca específicamente análisis, opiniones o comentarios para la fecha {fecha_boletin} sobre:
-   - Los cambios normativos del {fecha_boletin}
-   - Impacto de las nuevas regulaciones
-   - Opiniones de expertos legales o económicos
-   - Análisis de consultoras o estudios jurídicos
+    3. Busca específicamente análisis, opiniones o comentarios para la fecha {fecha_boletin} sobre:
+    - Los cambios normativos del {fecha_boletin}
+    - Impacto de las nuevas regulaciones
+    - Opiniones de expertos legales o económicos
+    - Análisis de consultoras o estudios jurídicos
 
-4. Haz una lista con resumen de las principales opiniones y referencia el medio donde lo encontraste.
+    4. Haz una lista con resumen de las principales opiniones y referencia el medio donde lo encontraste.
 
-FORMATO DE RESPUESTA (JSON válido):
-[
-  {{
-    "medio": "Nombre del medio o portal",
-    "url": "URL del artículo (si está disponible)",
-    "autor": "Nombre del autor o experto (si está disponible)",
-    "titulo": "Título del artículo o análisis",
-    "opinion_resumen": "Resumen de la opinión o análisis encontrado",
-    "fecha_publicacion": "Fecha de publicación (si está disponible)",
-    "relevancia": "alta|media|baja"
-  }}
-]
+    FORMATO DE RESPUESTA (JSON válido):
+    [
+    {{
+        "medio": "Nombre del medio o portal",
+        "url": "URL del artículo o analisis periodistico (si está disponible)",
+        "autor": "Nombre del autor o experto (si está disponible)",
+        "titulo": "Título del artículo o análisis",
+        "opinion_resumen": "Resumen de la opinión o análisis encontrado",
+        "fecha_publicacion": "Fecha de publicación (si está disponible)",
+        "relevancia": "alta|media|baja"
+    }}
+    ]
 
-IMPORTANTE:
-- Responde ÚNICAMENTE con el JSON válido, sin texto adicional
-- Incluye máximo 10 opiniones
-- Prioriza fuentes confiables y reconocidas
-- Si no encuentras información, retorna un array vacío []
-""" 
+    IMPORTANTE:
+    - Responde ÚNICAMENTE con el JSON válido, sin texto adicional
+    - Incluye máximo 10 opiniones
+    - Prioriza fuentes confiables y reconocidas
+    - Si no encuentras información, retorna un array vacío []
+    """ 
         
         contents = [
             types.Content(

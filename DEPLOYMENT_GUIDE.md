@@ -557,8 +557,7 @@ python test_api.py https://tu-api-url.execute-api.us-east-1.amazonaws.com/v1 --s
 4. **Consultar documentación**:
    - [README.md](README.md) - Documentación general
    - [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Guía de problemas
-   - [API_DOCUMENTATION.md](API_DOCUMENTATION.md) - Documentación de API
-
+   
 ---
 
 **¡Felicitaciones!** 🎉 Si has llegado hasta aquí, tu aplicación debería estar funcionando correctamente. Ahora puedes integrarla con tu Telegram Mini App y comenzar a analizar el Boletín Oficial de Argentina.

@@ -224,7 +224,30 @@ additional_tags = {
 POST https://[function-url].lambda-url.[region].on.aws/
 ```
 
-### Formato de request
+### Endpoints Disponibles
+
+La API ahora soporta dos tipos de análisis separados:
+
+#### 1. Análisis del Boletín (solo normativa)
+
+```json
+{
+  "action": "analyze_boletin",
+  "fecha": "2024-01-15",
+  "forzar_reanalisis": false
+}
+```
+
+#### 2. Opiniones de Expertos (requiere análisis previo)
+
+```json
+{
+  "action": "get_expert_opinions",
+  "fecha": "2024-01-15"
+}
+```
+
+#### 3. Análisis Completo (backward compatibility)
 
 ```json
 {
@@ -237,6 +260,7 @@ POST https://[function-url].lambda-url.[region].on.aws/
 
 | Parámetro | Tipo | Descripción | Requerido |
 |-----------|------|-------------|-----------|
+| `action` | string | Tipo de análisis: "analyze_boletin" o "get_expert_opinions" | No (default: análisis completo) |
 | `fecha` | string | Fecha en formato YYYY-MM-DD | No (usa fecha actual) |
 | `forzar_reanalisis` | boolean | Forzar nuevo análisis ignorando cache | No (default: false) |
 
@@ -306,36 +330,69 @@ POST https://[function-url].lambda-url.[region].on.aws/
 
 ### Ejemplos de uso
 
-**Análisis de fecha específica:**
+**Análisis del boletín solamente:**
+```bash
+curl -X POST https://w6scjpjua3bmj272d2dqhxy2ve000000.lambda-url.us-east-1.on.aws/ \
+  -H "Content-Type: application/json" \
+  -d '{"action": "analyze_boletin", "fecha": "2024-01-15"}'
+```
+
+**Obtener opiniones de expertos:**
+```bash
+curl -X POST https://w6scjpjua3bmj272d2dqhxy2ve000000.lambda-url.us-east-1.on.aws/ \
+  -H "Content-Type: application/json" \
+  -d '{"action": "get_expert_opinions", "fecha": "2024-01-15"}'
+```
+
+**Análisis completo (backward compatibility):**
 ```bash
 curl -X POST https://w6scjpjua3bmj272d2dqhxy2ve000000.lambda-url.us-east-1.on.aws/ \
   -H "Content-Type: application/json" \
   -d '{"fecha": "2024-01-15"}'
 ```
 
-**Forzar nuevo análisis:**
+**Forzar nuevo análisis del boletín:**
 ```bash
 curl -X POST https://w6scjpjua3bmj272d2dqhxy2ve000000.lambda-url.us-east-1.on.aws/ \
   -H "Content-Type: application/json" \
-  -d '{"fecha": "2024-01-15", "forzar_reanalisis": true}'
+  -d '{"action": "analyze_boletin", "fecha": "2024-01-15", "forzar_reanalisis": true}'
 ```
 
-**Análisis de fecha actual:**
-```bash
-curl -X POST https://w6scjpjua3bmj272d2dqhxy2ve000000.lambda-url.us-east-1.on.aws/ \
-  -H "Content-Type: application/json" \
-  -d '{"fecha": "2025-08-07"}'
-```
+## 🔄 Flujo de Trabajo con Dos Botones
+
+La aplicación ahora cuenta con dos botones separados para un mejor control del proceso:
+
+### 1. Botón "Analizar Boletín"
+- **Función**: Analiza únicamente el contenido normativo del Boletín Oficial
+- **Tiempo**: ~30-60 segundos
+- **Resultado**: Resumen, cambios principales, áreas afectadas, impacto estimado
+- **Cache**: Utiliza cache si existe análisis previo
+
+### 2. Botón "Analizar Opiniones de Expertos"
+- **Función**: Busca y analiza opiniones de expertos sobre el boletín ya analizado
+- **Requisito**: Debe existir un análisis previo del boletín para la fecha
+- **Tiempo**: ~20-40 segundos
+- **Resultado**: Lista de opiniones de medios y expertos argentinos
+- **Cache**: Utiliza cache si ya se obtuvieron opiniones
+
+### Ventajas del Flujo Separado
+- ✅ **Rapidez**: Obtén el análisis principal más rápido
+- ✅ **Control**: Decide si necesitas opiniones de expertos
+- ✅ **Eficiencia**: Evita timeouts en análisis largos
+- ✅ **Flexibilidad**: Usa solo lo que necesitas
 
 ## 🧪 Testing
 
 ### Pruebas automatizadas
 
-El proyecto incluye un script de pruebas completo:
+El proyecto incluye scripts de pruebas completos:
 
 ```bash
-# Ejecutar todas las pruebas
+# Ejecutar todas las pruebas (análisis completo)
 python test_api.py https://w6scjpjua3bmj272d2dqhxy2ve000000.lambda-url.us-east-1.on.aws/
+
+# Probar endpoints separados
+python test_separated_endpoints.py https://w6scjpjua3bmj272d2dqhxy2ve000000.lambda-url.us-east-1.on.aws/
 
 # Ejecutar con datos de prueba
 python test_api.py https://w6scjpjua3bmj272d2dqhxy2ve000000.lambda-url.us-east-1.on.aws/ --load-test-data
@@ -346,6 +403,10 @@ python test_api.py https://w6scjpjua3bmj272d2dqhxy2ve000000.lambda-url.us-east-1
 # Con timeout personalizado
 python test_api.py https://w6scjpjua3bmj272d2dqhxy2ve000000.lambda-url.us-east-1.on.aws/ --timeout 120
 ```
+### Pruebas en postman de tu lambda
+
+Importar en Postman la colección: tests/BoletinOficial.postman_collection.json
+
 
 ### Tipos de pruebas incluidas
 

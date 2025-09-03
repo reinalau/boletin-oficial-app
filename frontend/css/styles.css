@@ -185,10 +185,15 @@ body {
   box-shadow: 0 0 0 3px rgba(0, 136, 204, 0.1);
 }
 
+/* Analyze Buttons Container */
+.analyze-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
 .analyze-button {
   width: 100%;
-  background: linear-gradient(135deg, var(--primary-blue), var(--primary-light));
-  color: var(--white);
   border: none;
   border-radius: var(--border-radius);
   padding: var(--spacing-md);
@@ -201,6 +206,16 @@ body {
   justify-content: center;
   gap: var(--spacing-sm);
   font-family: var(--font-family);
+}
+
+.analyze-button.primary {
+  background: linear-gradient(135deg, var(--primary-blue), var(--primary-light));
+  color: var(--white);
+}
+
+.analyze-button.secondary {
+  background: linear-gradient(135deg, var(--accent-blue), var(--primary-blue));
+  color: var(--white);
 }
 
 .analyze-button:hover:not(:disabled) {
@@ -217,6 +232,11 @@ body {
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
+}
+
+.analyze-button.secondary:disabled {
+  background: var(--gray);
+  opacity: 0.6;
 }
 
 .button-icon {
@@ -788,4 +808,166 @@ Opinion Source Link Styles */
   font-size: 0.8em;
   opacity: 0.7;
   margin-left: 2px;
+}
+
+/* Update Confirmation Modal (Compact for Mini App) */
+.update-confirmation-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1002;
+  padding: var(--spacing-md);
+}
+
+.update-confirmation-content {
+  background: var(--white);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-lg);
+  max-width: 320px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.update-confirmation-header h3 {
+  color: var(--text-blue);
+  font-size: var(--font-size-lg);
+  margin: 0 0 var(--spacing-md) 0;
+  font-weight: 600;
+}
+
+.update-confirmation-body {
+  margin-bottom: var(--spacing-lg);
+}
+
+.update-confirmation-body p {
+  color: var(--dark-gray);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.update-confirmation-body p:last-child {
+  margin-bottom: 0;
+  font-weight: 500;
+  color: var(--text-blue);
+}
+
+.update-confirmation-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+}
+
+.update-btn {
+  flex: 1;
+  padding: 0.75rem var(--spacing-sm);
+  border-radius: var(--border-radius);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+  font-family: var(--font-family);
+}
+
+.update-btn.primary {
+  background: var(--primary-blue);
+  color: var(--white);
+}
+
+.update-btn.secondary {
+  background: var(--light-gray);
+  color: var(--dark-gray);
+  border: 1px solid var(--gray);
+}
+
+.update-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.update-btn:active {
+  transform: translateY(0);
+}
+
+.update-btn.primary:hover {
+  background: var(--primary-dark);
+}
+
+.update-btn.secondary:hover {
+  background: var(--secondary-blue);
+  border-color: var(--primary-blue);
+}
+
+/* Update Mode Button Style */
+.analyze-button.update-mode {
+  background: linear-gradient(135deg, var(--accent-blue), var(--primary-dark));
+}
+
+.analyze-button.update-mode:hover:not(:disabled) {
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.4);
+}
+
+/* Compact Loading for Buttons */
+.analyze-button.loading {
+  background: var(--gray);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.compact-spinner {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-right: var(--spacing-sm);
+}
+
+.spinner-dot {
+  width: 6px;
+  height: 6px;
+  background: currentColor;
+  border-radius: 50%;
+  animation: compactSpinnerPulse 1.4s ease-in-out infinite both;
+}
+
+.spinner-dot:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.spinner-dot:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+.spinner-dot:nth-child(3) {
+  animation-delay: 0s;
+}
+
+@keyframes compactSpinnerPulse {
+  0%, 80%, 100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }

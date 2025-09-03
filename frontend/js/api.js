@@ -10,7 +10,65 @@ class APIClient {
   }
 
   /**
-   * Analiza el boletín para una fecha específica
+   * Analiza el boletín para una fecha específica (solo análisis del boletín)
+   * @param {string} date - Fecha en formato YYYY-MM-DD
+   * @param {boolean} forceReanalysis - Forzar reanálisis
+   * @returns {Promise<Object>} Resultado del análisis del boletín
+   */
+  async analyzeBoletin(date, forceReanalysis = false) {
+    console.log('🔍 APIClient.analyzeBoletin called with:', { date, forceReanalysis });
+
+    const payload = {
+      action: 'analyze_boletin',
+      fecha: date,
+      forzar_reanalisis: forceReanalysis
+    };
+
+    console.log('📤 Sending payload:', JSON.stringify(payload, null, 2));
+
+    const response = await this.makeRequest('', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.success) {
+      throw new Error(response.message || 'Error en el análisis del boletín');
+    }
+
+    return response.data;
+  }
+
+  /**
+   * Obtiene opiniones de expertos para una fecha específica
+   * @param {string} date - Fecha en formato YYYY-MM-DD
+   * @param {boolean} forceUpdate - Forzar actualización de opiniones
+   * @returns {Promise<Object>} Resultado con opiniones de expertos
+   */
+  async getExpertOpinions(date, forceUpdate = false) {
+    console.log('🔍 APIClient.getExpertOpinions called with:', { date, forceUpdate });
+
+    const payload = {
+      action: 'get_expert_opinions',
+      fecha: date,
+      forzar_actualizacion: forceUpdate
+    };
+
+    console.log('📤 Sending payload:', JSON.stringify(payload, null, 2));
+
+    const response = await this.makeRequest('', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.success) {
+      throw new Error(response.message || 'Error obteniendo opiniones de expertos');
+    }
+
+    return response.data;
+  }
+
+  /**
+   * Analiza el boletín para una fecha específica (método legacy - mantener compatibilidad)
    * @param {string} date - Fecha en formato YYYY-MM-DD
    * @param {boolean} forceReanalysis - Forzar reanálisis
    * @returns {Promise<Object>} Resultado del análisis

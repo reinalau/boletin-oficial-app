@@ -1,0 +1,64 @@
+{
+	"info": {
+		"_postman_id": "79625dd8-862f-4627-9642-0057767f200c",
+		"name": "BoletinOficial",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "32375182"
+	},
+	"item": [
+		{
+			"name": "AnalizarLambda",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"fecha\": \"2025-09-02\",\r\n    \"forzar_reanalisis\": false\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "https://xxxxxxxxxxxx.lambda-url.us-east-1.on.aws/"
+			},
+			"response": []
+		},
+		{
+			"name": "get_expert_opinions",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{ \r\n    \"action\": \"get_expert_opinions\",\r\n    \"fecha\": \"2025-09-02\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "https://xxxxxxxxxxxx.lambda-url.us-east-1.on.aws/"
+			},
+			"response": []
+		},
+		{
+			"name": "analyze_boletin",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"action\": \"analyze_boletin\",\r\n    \"fecha\": \"2025-09-02\",\r\n    \"forzar_reanalisis\": false\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "https://xxxxxxxxxxxx.lambda-url.us-east-1.on.aws/"
+			},
+			"response": []
+		}
+	]
+}
